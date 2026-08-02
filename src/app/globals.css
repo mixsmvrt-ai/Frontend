@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070713;
+  --foreground: #f7f4ff;
+  --muted: #a6a1bb;
+  --panel: rgba(21, 18, 43, .72);
+  --border: rgba(255,255,255,.1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+* { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+.glow { box-shadow: 0 0 80px rgba(133, 86, 255, .23); }
+.glass { background: var(--panel); border: 1px solid var(--border); backdrop-filter: blur(20px); }
+.field { background: rgba(255,255,255,.045); border: 1px solid var(--border); border-radius: .75rem; color: white; padding: .75rem; width: 100%; outline: none; }
+.field select, select.field { color-scheme: dark; }
+.field option, select.field option { background: #181827; color: #f7f4ff; }
+.field:focus { border-color: rgba(169, 119, 255, .8); box-shadow: 0 0 0 3px rgba(138, 88, 255, .16); }
+.data-scroll { max-height: min(62vh, 720px); overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable both-edges; }
+.data-scroll-x { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-gutter: stable; }

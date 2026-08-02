@@ -1,0 +1,2 @@
+"use client";
+export default function Error({ reset }: { error: Error; reset: () => void }) { return <main className="grid min-h-screen place-items-center bg-[#070713] p-5 text-center"><section className="glass max-w-md rounded-2xl p-8"><h1 className="text-3xl font-bold">Something interrupted the flow.</h1><p className="mt-3 text-[#aaa6b8]">The page could not be loaded safely.</p><button onClick={reset} className="mt-6 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold">Try again</button></section></main>; }

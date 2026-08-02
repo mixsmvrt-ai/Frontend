@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function VerifyEmailPage() { return <main className="grid min-h-screen place-items-center bg-[#070713] p-5"><section className="glass max-w-md rounded-2xl p-8 text-center"><h1 className="text-3xl font-black">Verify your email</h1><p className="mt-3 text-[#aaa3bd]">Open the secure confirmation link sent by Supabase to activate your account.</p><Link href="/login" className="mt-6 inline-block rounded-lg bg-violet-500 px-5 py-3 text-sm font-bold">Back to login</Link></section></main>; }
