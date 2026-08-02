@@ -838,7 +838,7 @@ export default function AdminDashboardPage() {
                     <div className="mt-5 space-y-3 text-sm text-[#d4cfe0]">
                       <div className="rounded-xl bg-black/20 px-4 py-3">{dashboard.overview?.openTickets ?? 0} support tickets currently need attention.</div>
                       <div className="rounded-xl bg-black/20 px-4 py-3">{dashboard.membershipOverview?.expiredTrials ?? 0} trial accounts have expired and may be ready for reactivation campaigns.</div>
-                      <div className="rounded-xl bg-black/20 px-4 py-3">AI error rate is {(dashboard.aiOverview?.errorRate ?? 0 * 100).toFixed ? `${((dashboard.aiOverview?.errorRate ?? 0) * 100).toFixed(1)}%` : "0.0%"} today.</div>
+                      <div className="rounded-xl bg-black/20 px-4 py-3">AI error rate is {((dashboard.aiOverview?.errorRate ?? 0) * 100).toFixed(1)}% today.</div>
                     </div>
                   </article>
                   <article className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
