@@ -1,0 +1,4 @@
+import Link from "next/link";
+import { AudioLines } from "lucide-react";
+
+export function PublicFooter() { return <footer className="border-t border-white/[.07] bg-[#080713]"><div className="mx-auto flex max-w-7xl flex-col gap-7 px-5 py-10 sm:flex-row sm:items-center sm:justify-between lg:px-8"><div><div className="flex items-center gap-2 text-lg font-bold"><AudioLines className="size-5 text-fuchsia-500" />MidiFlow</div><p className="mt-2 text-sm text-[#908d9f]">Built for producers. Powered by AI.</p></div><div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#aaa6b7]"><Link href="/features" className="hover:text-white">Features</Link><Link href="/pricing" className="hover:text-white">Pricing</Link><Link href="/download" className="hover:text-white">Download</Link><Link href="/support" className="hover:text-white">Support</Link></div></div></footer>; }
