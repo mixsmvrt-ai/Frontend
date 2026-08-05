@@ -135,7 +135,7 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
       toast("Sign in to create a project", {
         description: "You can explore the prompt builder first. Login is only required once you want to generate and save.",
       });
-      router.push(`/login?next=${encodeURIComponent(projectId ? `/projects/${projectId}` : "/create")}`);
+      router.push(`/login?next=${encodeURIComponent(projectId ? `/projects/${projectId}` : "/")}`);
       return;
     }
 

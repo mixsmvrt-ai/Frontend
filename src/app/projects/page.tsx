@@ -96,7 +96,7 @@ export default function ProjectsPage() {
           <h1 className="mt-2 text-4xl font-black">Your ideas, organized.</h1>
           <p className="mt-3 max-w-2xl text-sm text-[#aaa3bd]">Search, sort, duplicate, archive, and restore projects from one place.</p>
         </div>
-        <Link href="/create" className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold"><FolderPlus className="size-4" />New project</Link>
+        <Link href="/" className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold"><FolderPlus className="size-4" />New project</Link>
       </header>
 
       <div className="mt-8 flex flex-wrap gap-3">

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { promptSignIn, useViewerAuth } from "@/features/auth/use-viewer-auth";
-import { GenerationComposer, type ComposerReplyState } from "@/features/generation/generation-composer";
+import { GenerationComposer, type ComposerReplyState, type ComposerSubmitInput } from "@/features/generation/generation-composer";
 import { favoriteGeneration, generateMusic, generationExports, readGeneration, regenerateGeneration, type GenerationFile, type GenerationRecord } from "@/services/generations";
 import { projectsApi, type ProjectMessage, type ProjectRecord } from "@/services/projects";
 import { workspaceApi } from "@/services/workspace";
@@ -15,6 +15,13 @@ import { workspaceApi } from "@/services/workspace";
 type GenerationMap = Record<string, GenerationRecord>;
 type ExportMap = Record<string, GenerationFile[]>;
 type PendingMap = Record<string, "download" | "regenerate" | "variation" | "favorite">;
+
+const generationProcessingSteps = [
+  { title: "Analyzing prompt", detail: "Reading the mood, key, and arrangement cues." },
+  { title: "Planning composition", detail: "Shaping the harmony, structure, and rhythm." },
+  { title: "Writing MIDI", detail: "Building notes, phrasing, and timing." },
+  { title: "Finalizing export", detail: "Preparing the MIDI file for download." },
+] as const;
 
 function variationPrompt(prompt: string) {
   return `${prompt}\n\nCreate a fresh variation that keeps the core vibe but changes the melodic phrasing, rhythm accents, and arrangement details.`;
@@ -46,6 +53,8 @@ export default function ProjectPage() {
   const [exportMap, setExportMap] = useState<ExportMap>({});
   const [pending, setPending] = useState<PendingMap>({});
   const [composerReply, setComposerReply] = useState<ComposerReplyState | null>(null);
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
+  const [assistantTyping, setAssistantTyping] = useState(false);
 
   const loadMessages = useCallback(async () => {
     try {
@@ -211,6 +220,57 @@ export default function ProjectPage() {
 
   const messageGenerations = useMemo(() => new Set(messages.map((message) => message.generation_id).filter(Boolean) as string[]), [messages]);
 
+  const submitProjectPrompt = async (input: ComposerSubmitInput) => {
+    if (!isAuthenticated) {
+      promptSignIn(`/projects/${projectId}`);
+      return;
+    }
+
+    setPendingPrompt(input.prompt);
+    setAssistantTyping(false);
+    setComposerReply({
+      status: "processing",
+      prompt: input.prompt,
+      activeStep: 0,
+      steps: generationProcessingSteps,
+    });
+
+    try {
+      const result = await projectsApi.createMessage(projectId, {
+        content: input.prompt,
+        generation: {
+          kind: input.kind,
+          key: input.key,
+          scale: input.scale,
+          tempo: input.tempo,
+          lengthBars: 8,
+          complexity: "medium",
+          variationAmount: 0.5,
+          timeSignature: [4, 4],
+        },
+      });
+
+      if (result.data.mode === "generation") {
+        await loadMessages();
+        setComposerReply(null);
+        setPendingPrompt(null);
+        return;
+      }
+
+      setComposerReply(null);
+      setAssistantTyping(true);
+      await new Promise((resolve) => window.setTimeout(resolve, result.data.recommendedDelayMs ?? 2500));
+      await loadMessages();
+      setPendingPrompt(null);
+      setAssistantTyping(false);
+    } catch (error) {
+      setPendingPrompt(null);
+      setAssistantTyping(false);
+      setComposerReply(null);
+      throw error;
+    }
+  };
+
   return (
     <AppShell>
       <section className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-5xl flex-col">
@@ -275,6 +335,14 @@ export default function ProjectPage() {
               </article>
             );
           })}
+          {pendingPrompt ? (
+      <article className="flex gap-3 justify-end">
+        <div className="max-w-[84%] rounded-2xl bg-violet-600 px-4 py-3 text-sm leading-6 text-white">
+        <p>{pendingPrompt}</p>
+        </div>
+        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 text-[#dcd8e8]"><UserRound className="size-4" /></div>
+      </article>
+      ) : null}
           {composerReply ? (
             <article className="flex gap-3 justify-start">
               <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-violet-500/15 text-violet-200">
@@ -319,10 +387,25 @@ export default function ProjectPage() {
               </div>
             </article>
           ) : null}
+          {assistantTyping ? (
+      <article className="flex gap-3 justify-start">
+        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-violet-500/15 text-violet-200">
+        <Bot className="size-4" />
+        </div>
+        <div className="max-w-[84%] rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm leading-6 text-[#ddd9e7]">
+        <p className="font-medium text-white">Music Brain is listening</p>
+        <div className="mt-3 flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-violet-300 animate-pulse" />
+          <span className="size-2 rounded-full bg-violet-300 animate-pulse [animation-delay:150ms]" />
+          <span className="size-2 rounded-full bg-violet-300 animate-pulse [animation-delay:300ms]" />
+        </div>
+        </div>
+      </article>
+      ) : null}
         </div>
 
         <div className="sticky bottom-0 bg-[#090816]/95 py-5 backdrop-blur">
-          <GenerationComposer compact projectId={projectId} onGenerated={() => void loadMessages()} onReplyStateChange={setComposerReply} />
+          <GenerationComposer compact projectId={projectId} onGenerated={() => void loadMessages()} onReplyStateChange={setComposerReply} onSubmitPrompt={submitProjectPrompt} />
         </div>
       </section>
     </AppShell>

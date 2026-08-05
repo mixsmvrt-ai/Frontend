@@ -127,7 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isBottomActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const showAdminLink = Boolean(isAuthenticated && membership?.isAdmin);
-  const showPlanPricing = pathname === "/create";
+  const showPlanPricing = pathname === "/";
   const pricingHref = showPlanPricing ? "/pricing" : "/billing";
   const workspaceLinks = isAuthenticated ? [...bottomLinks, { label: "Referrals", href: "/referrals", icon: Sparkles }] : bottomLinks;
 
@@ -145,7 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="px-3 pb-3">
         <div className="space-y-2">
-          <Link href="/create" onClick={() => setMobileOpen(false)} className={sidebarLinkClass(pathname === "/create" || pathname === "/dashboard")}>
+          <Link href="/" onClick={() => setMobileOpen(false)} className={sidebarLinkClass(pathname === "/" || pathname === "/dashboard")}>
             <Plus className="size-4 text-violet-200" />
             New Chat
           </Link>
