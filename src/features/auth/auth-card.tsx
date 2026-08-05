@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase/browser";
 import { useRouter } from "next/navigation";
+import { captureReferralFromUrl, getStoredReferral, signupReferralMetadata } from "@/services/referrals";
 
 const discoveryOptions = ["Google or another search engine", "YouTube", "Instagram or TikTok", "A friend or colleague", "Discord or another community", "A music producer or creator", "Other"];
 
@@ -17,6 +18,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" | "rese
   const [creatorRole, setCreatorRole] = useState("");
   const [discoverySource, setDiscoverySource] = useState("");
   const [discoveryOther, setDiscoveryOther] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [busy, setBusy] = useState(false);
   const query = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
   const nextPath = query?.get("next") ?? query?.get("redirectTo") ?? "/dashboard";
@@ -29,6 +31,16 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" | "rese
       }
     });
   }, [mode, nextPath, router]);
+
+  useEffect(() => {
+    if (mode !== "signup") return;
+    const existing = getStoredReferral();
+    if (existing?.code) setReferralCode(existing.code);
+    if (typeof window === "undefined") return;
+    void captureReferralFromUrl(window.location.search, window.location.pathname).then((code) => {
+      if (code) setReferralCode(code);
+    });
+  }, [mode]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -56,6 +68,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" | "rese
                   creator_role: creatorRole || null,
                   discovery_source: discoverySource,
                   discovery_other: discoverySource === "Other" ? discoveryOther.trim() : null,
+                  ...signupReferralMetadata(),
                 },
               },
             })
@@ -94,6 +107,12 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" | "rese
             </label>
           </div>
         )}
+
+        {isSignup && referralCode ? (
+          <div className="mt-4 rounded-2xl border border-violet-400/30 bg-violet-500/10 p-4 text-sm text-violet-100">
+            Referral applied: <span className="font-bold tracking-[.12em]">{referralCode}</span>
+          </div>
+        ) : null}
 
         <label className="mt-4 block text-sm font-medium">Email<input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required className="field mt-2" autoComplete="email" /></label>
         {mode !== "forgot" && <label className="mt-4 block text-sm font-medium">Password<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required minLength={8} className="field mt-2" autoComplete={mode === "login" ? "current-password" : "new-password"} /><span className="mt-2 block text-xs font-normal text-[#8f8ca0]">Use at least 8 characters.</span></label>}

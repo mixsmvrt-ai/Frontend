@@ -129,6 +129,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const showAdminLink = Boolean(isAuthenticated && membership?.isAdmin);
   const showPlanPricing = pathname === "/create";
   const pricingHref = showPlanPricing ? "/pricing" : "/billing";
+  const workspaceLinks = isAuthenticated ? [...bottomLinks, { label: "Referrals", href: "/referrals", icon: Sparkles }] : bottomLinks;
 
   const sidebar = (
     <>
@@ -205,7 +206,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="px-3 py-4">
         <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-[.14em] text-[#817d91]">Workspace</p>
         <div className="space-y-1">
-          {bottomLinks.map(({ label, href, icon: Icon }) => (
+          {workspaceLinks.map(({ label, href, icon: Icon }) => (
             <Link key={href} href={label === "Pricing" ? pricingHref : href} onClick={() => setMobileOpen(false)} className={sidebarLinkClass(isBottomActive(label === "Pricing" ? pricingHref : href))}>
               <Icon className="size-4 text-violet-200" />
               {label}

@@ -36,6 +36,14 @@ export interface ComposerReplyState {
   generationId?: string;
 }
 
+export interface ComposerSubmitInput {
+  prompt: string;
+  kind: "melody" | "chords" | "counter_melody" | "bassline" | "drums" | "full_composition";
+  key: string;
+  scale: "major" | "minor";
+  tempo: number;
+}
+
 function projectTitleFromPrompt(value: string) {
   const clean = value.trim().replace(/\s+/g, " ");
   if (clean.length <= 48) return clean;
@@ -54,7 +62,7 @@ function usageThreshold(usagePercent: number) {
   return null;
 }
 
-export function GenerationComposer({ compact = false, projectId, onGenerated, onReplyStateChange }: { compact?: boolean; projectId?: string; onGenerated?: () => void; onReplyStateChange?: (state: ComposerReplyState | null) => void }) {
+export function GenerationComposer({ compact = false, projectId, onGenerated, onReplyStateChange, onSubmitPrompt }: { compact?: boolean; projectId?: string; onGenerated?: () => void; onReplyStateChange?: (state: ComposerReplyState | null) => void; onSubmitPrompt?: (input: ComposerSubmitInput) => Promise<void> }) {
   const router = useRouter();
   const { isAuthenticated, authResolved } = useViewerAuth();
   const { membership, refresh } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
@@ -156,6 +164,19 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
     processingTimerRef.current = window.setInterval(updateProcessingStep, 1200);
 
     try {
+      if (onSubmitPrompt) {
+        clearProcessingTimer();
+        await onSubmitPrompt({
+          prompt: generationPrompt,
+          kind: kind.toLowerCase().replaceAll(" ", "_") as ComposerSubmitInput["kind"],
+          key,
+          scale: scale.toLowerCase() as ComposerSubmitInput["scale"],
+          tempo: parsedTempo,
+        });
+        setPrompt("");
+        return;
+      }
+
       if (!activeProjectId) {
         const project = await projectsApi.create({
           title: projectTitleFromPrompt(prompt),
