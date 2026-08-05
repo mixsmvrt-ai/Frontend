@@ -17,10 +17,84 @@ const bottomLinks = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
+type WorkspaceMenuProps = {
+  isAuthenticated: boolean;
+  membership: ReturnType<typeof useMembership>["membership"];
+  pricingHref: string;
+  showAdminLink: boolean;
+  showPlanPricing: boolean;
+  workspaceLinks: typeof bottomLinks;
+  isBottomActive: (href: string) => boolean;
+  onNavigate: () => void;
+};
+
 function sidebarLinkClass(active: boolean) {
   return active
     ? "flex items-center gap-3 rounded-xl bg-violet-600/90 px-3 py-2.5 text-sm font-semibold text-white"
     : "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#cbc6d8] transition hover:bg-white/[.05] hover:text-white";
+}
+
+function WorkspaceMenu({
+  isAuthenticated,
+  membership,
+  pricingHref,
+  showAdminLink,
+  showPlanPricing,
+  workspaceLinks,
+  isBottomActive,
+  onNavigate,
+}: WorkspaceMenuProps) {
+  return (
+    <div className="rounded-[28px] border border-white/10 bg-[#121021]/95 p-4 shadow-[0_24px_80px_rgba(4,4,12,0.55)] backdrop-blur">
+      <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-[.14em] text-[#817d91]">Workspace</p>
+      <div className="space-y-1">
+        {workspaceLinks.map(({ label, href, icon: Icon }) => (
+          <Link key={href} href={label === "Pricing" ? pricingHref : href} onClick={onNavigate} className={sidebarLinkClass(isBottomActive(label === "Pricing" ? pricingHref : href))}>
+            <Icon className="size-4 text-violet-200" />
+            {label}
+          </Link>
+        ))}
+        {showAdminLink ? (
+          <Link href="/admin" onClick={onNavigate} className={sidebarLinkClass(isBottomActive("/admin"))}>
+            <Shield className="size-4 text-violet-200" />
+            Admin panel
+          </Link>
+        ) : null}
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/10 bg-white/[.03] p-4">
+        {isAuthenticated ? (
+          <>
+            <Link href="/profile" onClick={onNavigate} className="flex items-center gap-3 text-sm font-semibold text-white">
+              <span className="grid size-9 place-items-center rounded-full bg-white/10"><UserRound className="size-4" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">Account</span>
+                <span className="mt-0.5 block text-xs text-[#9d97b0]">{showPlanPricing ? "Open profile to view your membership and account details." : membership?.type === "trial" ? `${membership.daysRemaining} trial days left` : membership?.type === "pro" ? `${membership.daysRemaining} Pro days left` : membership?.type === "expired" ? "Read-only access" : "Workspace settings"}</span>
+              </span>
+            </Link>
+            <div className="mt-3 flex gap-2">
+              <Link href="/profile" onClick={onNavigate} className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-center text-xs font-semibold text-[#d7d2e2]">Profile</Link>
+              <Link href="/logout" onClick={onNavigate} className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-[#d7d2e2]"><LogOut className="size-3.5" />Logout</Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-3 text-sm font-semibold text-white">
+              <span className="grid size-9 place-items-center rounded-full bg-white/10"><UserRound className="size-4" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">Account</span>
+                <span className="mt-0.5 block text-xs text-[#9d97b0]">Sign in when you&apos;re ready to save projects and generate MIDI.</span>
+              </span>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Link href="/login?next=%2Fcreate" onClick={onNavigate} className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-center text-xs font-semibold text-[#d7d2e2]">Log in</Link>
+              <Link href="/signup?next=%2Fcreate" onClick={onNavigate} className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-center text-xs font-semibold text-[#d7d2e2]">Sign up</Link>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -30,9 +104,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [projectQuery, setProjectQuery] = useState("");
   const [menuId, setMenuId] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authResolved, setAuthResolved] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const workspaceMenuRef = useRef<HTMLDivElement>(null);
   const { membership } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
 
   useEffect(() => {
@@ -83,10 +159,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const closeMenu = (event: MouseEvent) => {
       if (!menuRef.current?.contains(event.target as Node)) setMenuId(null);
+      if (!workspaceMenuRef.current?.contains(event.target as Node)) setWorkspaceMenuOpen(false);
     };
     document.addEventListener("mousedown", closeMenu);
     return () => document.removeEventListener("mousedown", closeMenu);
   }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      setWorkspaceMenuOpen(false);
+    }
+  }, [mobileOpen]);
 
   const projectAction = async (action: "rename" | "duplicate" | "archive" | "delete", project: Project) => {
     try {
@@ -201,56 +284,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <div className="mx-3 border-t border-white/10" />
-
-      <div className="px-3 py-4">
-        <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-[.14em] text-[#817d91]">Workspace</p>
-        <div className="space-y-1">
-          {workspaceLinks.map(({ label, href, icon: Icon }) => (
-            <Link key={href} href={label === "Pricing" ? pricingHref : href} onClick={() => setMobileOpen(false)} className={sidebarLinkClass(isBottomActive(label === "Pricing" ? pricingHref : href))}>
-              <Icon className="size-4 text-violet-200" />
-              {label}
-            </Link>
-          ))}
-          {showAdminLink ? (
-            <Link href="/admin" onClick={() => setMobileOpen(false)} className={sidebarLinkClass(isBottomActive("/admin"))}>
-              <Shield className="size-4 text-violet-200" />
-              Admin panel
-            </Link>
-          ) : null}
+      <div ref={workspaceMenuRef} className="pointer-events-none absolute bottom-4 right-4 z-20 md:hidden">
+        <div className={`pointer-events-auto absolute bottom-16 right-0 w-[min(320px,calc(100vw-2.5rem))] origin-bottom-right transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-2 scale-95 opacity-0"}`}>
+          <WorkspaceMenu
+            isAuthenticated={isAuthenticated}
+            membership={membership}
+            pricingHref={pricingHref}
+            showAdminLink={showAdminLink}
+            showPlanPricing={showPlanPricing}
+            workspaceLinks={workspaceLinks}
+            isBottomActive={isBottomActive}
+            onNavigate={() => {
+              setWorkspaceMenuOpen(false);
+              setMobileOpen(false);
+            }}
+          />
         </div>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[.03] p-4">
-          {isAuthenticated ? (
-            <>
-              <Link href="/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 text-sm font-semibold text-white">
-                <span className="grid size-9 place-items-center rounded-full bg-white/10"><UserRound className="size-4" /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate">Account</span>
-                  <span className="mt-0.5 block text-xs text-[#9d97b0]">{showPlanPricing ? "Open profile to view your membership and account details." : membership?.type === "trial" ? `${membership.daysRemaining} trial days left` : membership?.type === "pro" ? `${membership.daysRemaining} Pro days left` : membership?.type === "expired" ? "Read-only access" : "Workspace settings"}</span>
-                </span>
-              </Link>
-              <div className="mt-3 flex gap-2">
-                <Link href="/profile" onClick={() => setMobileOpen(false)} className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-center text-xs font-semibold text-[#d7d2e2]">Profile</Link>
-                <Link href="/logout" onClick={() => setMobileOpen(false)} className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-[#d7d2e2]"><LogOut className="size-3.5" />Logout</Link>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 text-sm font-semibold text-white">
-                <span className="grid size-9 place-items-center rounded-full bg-white/10"><UserRound className="size-4" /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate">Account</span>
-                  <span className="mt-0.5 block text-xs text-[#9d97b0]">Sign in when you&apos;re ready to save projects and generate MIDI.</span>
-                </span>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <Link href="/login?next=%2Fcreate" onClick={() => setMobileOpen(false)} className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-center text-xs font-semibold text-[#d7d2e2]">Log in</Link>
-                <Link href="/signup?next=%2Fcreate" onClick={() => setMobileOpen(false)} className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-center text-xs font-semibold text-[#d7d2e2]">Sign up</Link>
-              </div>
-            </>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setWorkspaceMenuOpen((open) => !open)}
+          aria-label="Open workspace menu"
+          aria-expanded={workspaceMenuOpen}
+          className="pointer-events-auto grid size-12 place-items-center rounded-full border border-white/10 bg-[#171427] text-[#d7d2e2] shadow-[0_18px_40px_rgba(6,6,14,0.45)] transition hover:scale-[1.02] hover:bg-[#1d1a31] focus:outline-none focus:ring-2 focus:ring-violet-400/70"
+        >
+          <Settings className="size-5" />
+        </button>
       </div>
     </>
   );
@@ -274,6 +333,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <aside className={`fixed inset-y-0 left-0 z-50 flex w-[290px] shrink-0 flex-col border-r border-white/10 bg-[#0c0b18] transition-transform md:sticky md:top-0 md:z-20 md:h-screen md:w-80 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         {sidebar}
+
+        <div className="group absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 md:block">
+          <button
+            type="button"
+            aria-label="Open workspace menu"
+            className="grid size-12 place-items-center rounded-full border border-white/10 bg-[#171427] text-[#d7d2e2] shadow-[0_18px_40px_rgba(6,6,14,0.45)] transition hover:scale-[1.02] hover:bg-[#1d1a31] focus:outline-none focus:ring-2 focus:ring-violet-400/70"
+          >
+            <Settings className="size-5" />
+          </button>
+
+          <div className="pointer-events-none absolute left-full top-1/2 ml-4 w-[320px] -translate-y-1/2 translate-x-3 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-x-0 group-focus-within:opacity-100">
+            <WorkspaceMenu
+              isAuthenticated={isAuthenticated}
+              membership={membership}
+              pricingHref={pricingHref}
+              showAdminLink={showAdminLink}
+              showPlanPricing={showPlanPricing}
+              workspaceLinks={workspaceLinks}
+              isBottomActive={isBottomActive}
+              onNavigate={() => setMobileOpen(false)}
+            />
+          </div>
+        </div>
       </aside>
 
       <main className="min-w-0 flex-1 overflow-x-hidden md:h-[100dvh] md:overflow-y-auto">
