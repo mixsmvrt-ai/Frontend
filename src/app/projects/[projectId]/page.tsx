@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Bot, CircleDashed, Download, Heart, Loader2, Music2, RefreshCcw, Save, Sparkles, UserRound } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { promptSignIn, useViewerAuth } from "@/features/auth/use-viewer-auth";
@@ -15,6 +15,8 @@ import { workspaceApi } from "@/services/workspace";
 type GenerationMap = Record<string, GenerationRecord>;
 type ExportMap = Record<string, GenerationFile[]>;
 type PendingMap = Record<string, "download" | "regenerate" | "variation" | "favorite">;
+
+const generationKinds = ["melody", "chords", "counter_melody", "bassline", "drums", "full_composition"] as const;
 
 const generationProcessingSteps = [
   { title: "Analyzing prompt", detail: "Reading the mood, key, and arrangement cues." },
@@ -43,6 +45,8 @@ function triggerDownload(url: string, fileName: string) {
 
 export default function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated } = useViewerAuth();
   const [project, setProject] = useState<ProjectRecord | null>(null);
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
@@ -55,6 +59,7 @@ export default function ProjectPage() {
   const [composerReply, setComposerReply] = useState<ComposerReplyState | null>(null);
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [assistantTyping, setAssistantTyping] = useState(false);
+  const initialPromptSubmittedRef = useRef(false);
 
   const loadMessages = useCallback(async () => {
     try {
@@ -220,7 +225,7 @@ export default function ProjectPage() {
 
   const messageGenerations = useMemo(() => new Set(messages.map((message) => message.generation_id).filter(Boolean) as string[]), [messages]);
 
-  const submitProjectPrompt = async (input: ComposerSubmitInput) => {
+  const submitProjectPrompt = useCallback(async (input: ComposerSubmitInput) => {
     if (!isAuthenticated) {
       promptSignIn(`/projects/${projectId}`);
       return;
@@ -269,7 +274,35 @@ export default function ProjectPage() {
       setComposerReply(null);
       throw error;
     }
-  };
+  }, [isAuthenticated, loadMessages, projectId]);
+
+  useEffect(() => {
+    const prompt = searchParams.get("prompt")?.trim();
+    if (initialPromptSubmittedRef.current || loading || !prompt || messages.length > 0) {
+      return;
+    }
+
+    const kindParam = searchParams.get("kind");
+    const scaleParam = searchParams.get("scale");
+    const tempoParam = Number(searchParams.get("tempo"));
+    const kind = generationKinds.find((value) => value === kindParam) ?? "melody";
+    const scale = scaleParam === "major" ? "major" : "minor";
+    const key = searchParams.get("key") || "A";
+    const tempo = Number.isInteger(tempoParam) && tempoParam >= 40 && tempoParam <= 240 ? tempoParam : 140;
+
+    initialPromptSubmittedRef.current = true;
+    router.replace(`/projects/${projectId}`);
+    void submitProjectPrompt({
+      prompt,
+      kind,
+      key,
+      scale,
+      tempo,
+    }).catch((error: unknown) => {
+      initialPromptSubmittedRef.current = false;
+      toast.error(error instanceof Error ? error.message : "Unable to send the first project prompt.");
+    });
+  }, [loading, messages.length, projectId, router, searchParams, submitProjectPrompt]);
 
   return (
     <AppShell>
