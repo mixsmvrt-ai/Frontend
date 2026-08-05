@@ -11,7 +11,7 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
     const code = search.get("code");
-    const nextPath = search.get("next") ?? "/dashboard";
+    const nextPath = search.get("next") ?? "/create";
     if (!supabase || !code) {
       setMessage("This verification link is invalid or Supabase is not configured.");
       return;

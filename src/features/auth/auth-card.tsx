@@ -21,7 +21,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" | "rese
   const [referralCode, setReferralCode] = useState("");
   const [busy, setBusy] = useState(false);
   const query = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
-  const nextPath = query?.get("next") ?? query?.get("redirectTo") ?? "/dashboard";
+  const nextPath = query?.get("next") ?? query?.get("redirectTo") ?? "/create";
 
   useEffect(() => {
     if (!supabase || (mode !== "login" && mode !== "signup")) return;
@@ -78,6 +78,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" | "rese
       if (result.error) return toast.error(result.error.message);
       toast.success(mode === "forgot" ? "Reset instructions sent." : mode === "signup" ? "Account created. Check your inbox to verify your email." : mode === "reset" ? "Password updated." : "Logged in successfully.");
       if (mode === "login") router.replace(nextPath);
+      if (mode === "signup") router.replace(nextPath);
       if (mode === "reset") router.replace("/login");
     } finally {
       setBusy(false);
