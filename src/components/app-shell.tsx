@@ -334,16 +334,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className={`fixed inset-y-0 left-0 z-50 flex w-[290px] shrink-0 flex-col border-r border-white/10 bg-[#0c0b18] transition-transform md:sticky md:top-0 md:z-20 md:h-screen md:w-80 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         {sidebar}
 
-        <div className="group absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 md:block">
-          <button
-            type="button"
-            aria-label="Open workspace menu"
-            className="grid size-12 place-items-center rounded-full border border-white/10 bg-[#171427] text-[#d7d2e2] shadow-[0_18px_40px_rgba(6,6,14,0.45)] transition hover:scale-[1.02] hover:bg-[#1d1a31] focus:outline-none focus:ring-2 focus:ring-violet-400/70"
-          >
-            <Settings className="size-5" />
-          </button>
-
-          <div className="pointer-events-none absolute left-full top-1/2 ml-4 w-[320px] -translate-y-1/2 translate-x-3 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-x-0 group-focus-within:opacity-100">
+        <div className="group absolute bottom-4 right-4 hidden md:block">
+          <div className="pointer-events-none absolute bottom-16 right-0 z-30 w-[320px] origin-bottom-right translate-y-2 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
             <WorkspaceMenu
               isAuthenticated={isAuthenticated}
               membership={membership}
@@ -355,6 +347,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onNavigate={() => setMobileOpen(false)}
             />
           </div>
+
+          <button
+            type="button"
+            aria-label="Open workspace menu"
+            className="grid size-12 place-items-center rounded-full border border-white/10 bg-[#171427] text-[#d7d2e2] shadow-[0_18px_40px_rgba(6,6,14,0.45)] transition hover:scale-[1.02] hover:bg-[#1d1a31] focus:outline-none focus:ring-2 focus:ring-violet-400/70"
+          >
+            <Settings className="size-5" />
+          </button>
         </div>
       </aside>
 
