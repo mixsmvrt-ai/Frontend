@@ -16,6 +16,21 @@ export interface ProjectRecord {
 	project_tags?: ProjectTag[];
 }
 export interface ProjectMessage { id: string; role: "user" | "assistant"; content: string; generation_id: string | null; created_at: string; }
+export interface ProjectConversationAssistantReply {
+	id: string;
+	role: "assistant";
+	content: string;
+	generation_id: string | null;
+	created_at: string;
+}
+
+export interface ProjectConversationResult {
+	mode: "generation" | "assistant";
+	generation?: { id: string; status: "completed"; midiFileUrl: string; fileName: string; tempo: number; key: string };
+	message?: ProjectConversationAssistantReply;
+	recommendedDelayMs?: number;
+}
+
 export const projectsApi = {
 	list: (query = "", sort: "updated_at" | "created_at" = "updated_at") => request<{ data: ProjectRecord[] }>(`/projects?query=${encodeURIComponent(query)}&sort=${sort}`),
 	read: (id: string) => request<{ data: ProjectRecord }>(`/projects/${encodeURIComponent(id)}`),
@@ -26,4 +41,5 @@ export const projectsApi = {
 	remove: (id: string) => request<void>(`/projects/${encodeURIComponent(id)}`, { method: "DELETE" }),
 	duplicate: (id: string) => request<{ data: { id: string } }>(`/projects/${encodeURIComponent(id)}/duplicate`, { method: "POST" }),
 	messages: (id: string) => request<{ data: ProjectMessage[] }>(`/projects/${encodeURIComponent(id)}/messages`),
+	createMessage: (id: string, input: { content: string; generation?: { kind: "melody" | "chords" | "counter_melody" | "bassline" | "drums" | "full_composition"; key?: string; scale?: "major" | "minor"; tempo?: number; lengthBars?: number; complexity?: "low" | "medium" | "high"; variationAmount?: number; timeSignature?: [number, number] } }) => request<{ data: ProjectConversationResult }>(`/projects/${encodeURIComponent(id)}/messages`, { method: "POST", body: JSON.stringify(input) }),
 };
