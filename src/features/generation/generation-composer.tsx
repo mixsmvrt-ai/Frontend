@@ -268,9 +268,25 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
           className="min-h-20 w-full resize-none bg-transparent px-3 py-3 text-[16px] leading-7 text-white outline-none placeholder:text-[#8f8da3]"
         />
         {settingsOpen ? (
-          <div id="generation-composer-settings" className="absolute inset-x-3 bottom-[4.6rem] z-20 rounded-2xl border border-white/10 bg-[#141425]/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,.45)] backdrop-blur">
+          <>
+            <button
+              type="button"
+              aria-label="Close prompt settings"
+              onClick={() => setSettingsOpen(false)}
+              className="fixed inset-0 z-10 bg-[#04040c]/45 backdrop-blur-[1px] md:hidden"
+            />
+            <motion.div
+              id="generation-composer-settings"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="fixed inset-x-3 bottom-3 z-20 rounded-[1.6rem] border border-white/10 bg-[#141425]/96 p-3 shadow-[0_24px_80px_rgba(0,0,0,.55)] backdrop-blur md:absolute md:inset-x-3 md:bottom-[4.6rem]"
+            >
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
+                <div className="mb-3 flex justify-center md:hidden">
+                  <span className="h-1.5 w-14 rounded-full bg-white/15" />
+                </div>
                 <p className="text-sm font-semibold text-white">Prompt settings</p>
                 <p className="text-xs text-[#9894aa]">Pick the MIDI type, key, scale, and tempo when you want more control.</p>
               </div>
@@ -313,7 +329,8 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
                 <span className="ml-2 text-xs text-[#a8a6b8]">BPM</span>
               </label>
             </div>
-          </div>
+            </motion.div>
+          </>
         ) : null}
         <div className="flex items-center justify-between gap-3 px-2 pb-2">
           <div className="flex min-w-0 items-center gap-3">
@@ -329,9 +346,17 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
             >
               <Plus className={`size-5 transition-transform ${settingsOpen ? "rotate-45" : "rotate-0"}`} />
             </motion.button>
-            <p className="truncate text-sm text-[#9f9bb1]">
-              {kind} • {key} {scale} • {tempo} BPM
-            </p>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className="truncate rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-100">
+                {kind}
+              </span>
+              <span className="truncate rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-100">
+                {key} {scale}
+              </span>
+              <span className="truncate rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-100">
+                {tempo} BPM
+              </span>
+            </div>
           </div>
           <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={generate} disabled={busy || creditsExhausted} aria-label="Generate MIDI" className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-[0_0_25px_rgba(119,75,255,.65)] disabled:opacity-60">
             <ArrowUp className="size-5" />
