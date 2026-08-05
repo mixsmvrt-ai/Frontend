@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUp, CircleDashed, Cloud, Download, Flame, Gem, Rocket, Sparkles } from "lucide-react";
+import { ArrowUp, CircleDashed, Cloud, Download, Flame, Gem, Plus, Rocket, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -66,11 +66,13 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
   const router = useRouter();
   const { isAuthenticated, authResolved } = useViewerAuth();
   const { membership, refresh } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
+  const composerRef = useRef<HTMLDivElement | null>(null);
   const [prompt, setPrompt] = useState("");
   const [kind, setKind] = useState("Melody");
   const [key, setKey] = useState("A");
   const [scale, setScale] = useState("Minor");
   const [tempo, setTempo] = useState("140");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [localReplyState, setLocalReplyState] = useState<ComposerReplyState | null>(null);
   const processingTimerRef = useRef<number | null>(null);
@@ -99,6 +101,29 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
       window.clearInterval(processingTimerRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+
+    const closeSettings = (event: MouseEvent) => {
+      if (!composerRef.current?.contains(event.target as Node)) {
+        setSettingsOpen(false);
+      }
+    };
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSettingsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", closeSettings);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeSettings);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [settingsOpen]);
 
   const clearProcessingTimer = () => {
     if (!processingTimerRef.current) return;
@@ -234,45 +259,79 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
           <p className="mt-1 text-xs opacity-90">{usageBanner.detail}</p>
         </div>
       ) : null}
-      <div className="rounded-2xl border border-violet-500/80 bg-[#0e0e1d]/90 p-3 shadow-[0_0_40px_rgba(104,58,255,.10)]">
+      <div ref={composerRef} className="relative rounded-2xl border border-violet-500/80 bg-[#0e0e1d]/90 p-3 shadow-[0_0_40px_rgba(104,58,255,.10)]">
         <textarea
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           placeholder="Example: Dark trap melody in A minor, piano with bell, emotional vibe"
           aria-label="Music generation prompt"
-          className="min-h-28 w-full resize-none bg-transparent px-3 py-4 text-[16px] leading-7 text-white outline-none placeholder:text-[#8f8da3]"
+          className="min-h-20 w-full resize-none bg-transparent px-3 py-3 text-[16px] leading-7 text-white outline-none placeholder:text-[#8f8da3]"
         />
+        {settingsOpen ? (
+          <div id="generation-composer-settings" className="absolute inset-x-3 bottom-[4.6rem] z-20 rounded-2xl border border-white/10 bg-[#141425]/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,.45)] backdrop-blur">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-white">Prompt settings</p>
+                <p className="text-xs text-[#9894aa]">Pick the MIDI type, key, scale, and tempo when you want more control.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-[#d9d8e7] transition hover:border-violet-400/50 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <select value={kind} onChange={(event) => setKind(event.target.value)} aria-label="Generation type" className="rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
+                <option>Melody</option>
+                <option>Chords</option>
+                <option>Counter Melody</option>
+                <option>Bassline</option>
+                <option>Drums</option>
+                <option>Full Composition</option>
+              </select>
+              <select value={key} onChange={(event) => setKey(event.target.value)} aria-label="Musical key" className="rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
+                {keys.map((note) => <option key={note} value={note}>{note}</option>)}
+              </select>
+              <select value={scale} onChange={(event) => setScale(event.target.value)} aria-label="Major or minor scale" className="rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
+                <option>Minor</option>
+                <option>Major</option>
+              </select>
+              <label className="flex items-center rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
+                <input
+                  type="number"
+                  value={tempo}
+                  min="40"
+                  max="240"
+                  step="1"
+                  inputMode="numeric"
+                  onChange={(event) => setTempo(event.target.value)}
+                  aria-label="Tempo in BPM"
+                  className="w-full bg-transparent text-sm text-[#dfdeeb] outline-none"
+                />
+                <span className="ml-2 text-xs text-[#a8a6b8]">BPM</span>
+              </label>
+            </div>
+          </div>
+        ) : null}
         <div className="flex items-center justify-between gap-3 px-2 pb-2">
-          <div className="flex flex-wrap gap-2">
-            <select value={kind} onChange={(event) => setKind(event.target.value)} aria-label="Generation type" className="rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
-              <option>Melody</option>
-              <option>Chords</option>
-              <option>Counter Melody</option>
-              <option>Bassline</option>
-              <option>Drums</option>
-              <option>Full Composition</option>
-            </select>
-            <select value={key} onChange={(event) => setKey(event.target.value)} aria-label="Musical key" className="rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
-              {keys.map((note) => <option key={note} value={note}>{note}</option>)}
-            </select>
-            <select value={scale} onChange={(event) => setScale(event.target.value)} aria-label="Major or minor scale" className="rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
-              <option>Minor</option>
-              <option>Major</option>
-            </select>
-            <label className="flex items-center rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
-              <input
-                type="number"
-                value={tempo}
-                min="40"
-                max="240"
-                step="1"
-                inputMode="numeric"
-                onChange={(event) => setTempo(event.target.value)}
-                aria-label="Tempo in BPM"
-                className="w-12 bg-transparent text-sm text-[#dfdeeb] outline-none"
-              />
-              <span className="ml-1 text-xs text-[#a8a6b8]">BPM</span>
-            </label>
+          <div className="flex min-w-0 items-center gap-3">
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setSettingsOpen((open) => !open)}
+              aria-label="Open prompt settings"
+              aria-expanded={settingsOpen}
+              aria-controls="generation-composer-settings"
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[.04] text-[#dfdeeb] transition hover:border-violet-400/50 hover:bg-white/[.08] hover:text-white"
+            >
+              <Plus className={`size-5 transition-transform ${settingsOpen ? "rotate-45" : "rotate-0"}`} />
+            </motion.button>
+            <p className="truncate text-sm text-[#9f9bb1]">
+              {kind} • {key} {scale} • {tempo} BPM
+            </p>
           </div>
           <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={generate} disabled={busy || creditsExhausted} aria-label="Generate MIDI" className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-[0_0_25px_rgba(119,75,255,.65)] disabled:opacity-60">
             <ArrowUp className="size-5" />
