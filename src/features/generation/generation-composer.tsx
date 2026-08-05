@@ -7,7 +7,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { useMembership } from "@/features/billing/use-membership";
-import { generateMusic } from "@/services/generations";
 import { projectsApi } from "@/services/projects";
 
 const styles = [
@@ -150,7 +149,8 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
   };
 
   const generate = async () => {
-    if (prompt.trim().length < 3) return toast.error("Describe at least a few notes or a musical feeling.");
+    const generationPrompt = prompt.trim();
+    if (generationPrompt.length < 3) return toast.error("Describe at least a few notes or a musical feeling.");
     const parsedTempo = Number(tempo);
     if (!Number.isInteger(parsedTempo) || parsedTempo < 40 || parsedTempo > 240) {
       return toast.error("BPM must be a whole number between 40 and 240.");
@@ -164,8 +164,34 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
       return;
     }
 
+    if (!projectId && !onSubmitPrompt) {
+      setBusy(true);
+      try {
+        const project = await projectsApi.create({
+          title: projectTitleFromPrompt(generationPrompt),
+          description: generationPrompt,
+          tags: [],
+          bpm: parsedTempo,
+          musicalKey: `${key} ${scale}`,
+        });
+        const query = new URLSearchParams({
+          prompt: generationPrompt,
+          kind: kind.toLowerCase().replaceAll(" ", "_"),
+          key,
+          scale: scale.toLowerCase(),
+          tempo: String(parsedTempo),
+        });
+        setPrompt("");
+        router.push(`/projects/${project.data.id}?${query.toString()}`);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Unable to start a project conversation.");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
     setBusy(true);
-    const generationPrompt = prompt.trim();
     publishReplyState({
       status: "processing",
       prompt: generationPrompt,
@@ -199,13 +225,15 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
           tempo: parsedTempo,
         });
         setPrompt("");
+        onGenerated?.();
+        void refresh();
         return;
       }
 
       if (!activeProjectId) {
         const project = await projectsApi.create({
-          title: projectTitleFromPrompt(prompt),
-          description: prompt.trim(),
+          title: projectTitleFromPrompt(generationPrompt),
+          description: generationPrompt,
           tags: [],
           bpm: parsedTempo,
           musicalKey: `${key} ${scale}`,
@@ -213,38 +241,14 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
         activeProjectId = project.data.id;
       }
 
-      const result = await generateMusic({
-          prompt,
-          kind: kind.toLowerCase().replaceAll(" ", "_"),
-          workflow: "text_to_midi",
-          key,
-          scale: scale.toLowerCase(),
-          tempo: parsedTempo,
-          projectId: activeProjectId,
-          lengthBars: 8,
-          complexity: "medium",
-          variationAmount: 0.5,
-          timeSignature: [4, 4],
-      });
-      clearProcessingTimer();
-      publishReplyState({
-        status: "completed",
-        prompt: generationPrompt,
-        activeStep: processingSteps.length - 1,
-        steps: processingSteps,
-        fileName: result.fileName,
-        downloadUrl: result.midiFileUrl,
-        generationId: result.id,
-      });
-      toast.success("Your MIDI generation is ready.", { description: "The project now has this idea in its conversation." });
       setPrompt("");
-      onGenerated?.();
-      void refresh();
-      if (!projectId && activeProjectId) router.push(`/projects/${activeProjectId}`);
+      if (activeProjectId) {
+        router.push(`/projects/${activeProjectId}`);
+      }
     } catch (error) {
       clearProcessingTimer();
       publishReplyState(null);
-      toast.error(error instanceof Error ? error.message : "Unable to generate MIDI.");
+      toast.error(error instanceof Error ? error.message : "Unable to continue the conversation.");
     } finally {
       clearProcessingTimer();
       setBusy(false);
