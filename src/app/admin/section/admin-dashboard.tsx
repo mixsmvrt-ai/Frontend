@@ -260,6 +260,7 @@ const MENUS: AdminMenu[] = [
     description: "Genres, moods, scales, rules, and knowledge primitives.",
     tabs: [
       { key: "genres", label: "Genres", mode: "collection", resourceKey: "genres" },
+      { key: "artists", label: "Artists", mode: "placeholder", description: "Manage artist vibe profiles, aliases, tempo tendencies, mood traits, and plugin categories." },
       { key: "instruments", label: "Instruments", mode: "collection", resourceKey: "instrumentRecommendations" },
       { key: "moods", label: "Moods", mode: "collection", resourceKey: "moods" },
       { key: "tempo-profiles", label: "Tempo Profiles", mode: "collection", resourceKey: "tempoRanges" },
@@ -390,6 +391,8 @@ function toIsoOrNull(value: string) {
 }
 
 function routeFor(menu: AdminMenu, tab: AdminTab) {
+  if (menu.key === "music-brain" && tab.key === "artists") return "/admin/artistProfiles";
+  if (menu.key === "music-brain" && tab.key === "genres") return "/admin/genreProfiles";
   const defaultTab = menu.tabs[0];
   if (menu.key === "dashboard") return "/admin";
   return tab.key === defaultTab.key ? `/admin/${menu.key}` : `/admin/${menu.key}/${tab.key}`;
