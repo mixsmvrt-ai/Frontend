@@ -1,6 +1,7 @@
+import { apiRequest } from "@/services/api";
+
 export interface ProjectInput { title: string; description: string; tags: string[]; genre?: string; bpm?: number; musicalKey?: string; archived?: boolean; }
-const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-async function request<T>(path: string, options?: RequestInit): Promise<T> { const response = await fetch(`${baseUrl}${path}`, { ...options, headers: { "Content-Type": "application/json", "x-user-id": "demo-user", ...(options?.headers ?? {}) }, credentials: "include" }); if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.error ?? "Unable to complete request"); } return response.status === 204 ? undefined as T : response.json() as Promise<T>; }
+async function request<T>(path: string, options?: RequestInit): Promise<T> { return apiRequest<T>(path, options); }
 export interface ProjectTag { tag: string; }
 export interface ProjectRecord {
 	id: string;

@@ -1,13 +1,7 @@
-const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+import { apiRequest } from "@/services/api";
 
 async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${baseUrl}/knowledge${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", "x-user-id": "demo-user" },
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error ?? "Knowledge request failed");
-  return payload as T;
+  return apiRequest<T>(`/knowledge${path}`);
 }
 
 export interface KnowledgeGenre {
