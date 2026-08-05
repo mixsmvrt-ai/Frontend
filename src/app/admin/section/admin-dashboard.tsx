@@ -34,10 +34,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase/browser";
+import type { ReferralSettings } from "@/services/referrals";
 
 const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
-type ResourceMode = "dashboard" | "users" | "membershipOverview" | "membershipUsers" | "aiOrchestratorOverview" | "songPackOverview" | "audit" | "collection" | "placeholder";
+type ResourceMode = "dashboard" | "users" | "membershipOverview" | "membershipUsers" | "aiOrchestratorOverview" | "songPackOverview" | "referralOverview" | "referralSettings" | "audit" | "collection" | "placeholder";
 
 type Overview = {
   totalUsers: number;
@@ -83,6 +84,19 @@ type AiOrchestratorOverview = {
     jsonValidationStrictness: string;
     cacheDurationSeconds: number;
   };
+};
+
+type ReferralOverview = {
+  totalReferralRevenue: number;
+  totalCommissionsPaid: number;
+  pendingCommissions: number;
+  availableCommissions: number;
+  topReferrers: Array<{ user: string; referralCode: string; earnings: number; signups: number; paidReferrals: number }>;
+  conversionRate: number;
+  totalReferralSignups: number;
+  totalReferralPurchases: number;
+  monthlyReferralGrowth: { signups: number; purchases: number; clicks: number };
+  totalPayouts: number;
 };
 
 type Row = Record<string, unknown>;
@@ -133,6 +147,7 @@ type AdminTab = {
   description?: string;
   userView?: UserView;
   membershipFilter?: string;
+  editable?: boolean;
 };
 
 type AdminMenu = {
@@ -195,7 +210,12 @@ const MENUS: AdminMenu[] = [
       { key: "transactions", label: "Transactions", mode: "collection", resourceKey: "payments" },
       { key: "subscriptions", label: "Subscriptions", mode: "membershipUsers", membershipFilter: "pro_active" },
       { key: "refunds", label: "Refunds", mode: "collection", resourceKey: "payments", description: "Review refunded or denied payment activity." },
-      { key: "payouts", label: "Payouts", mode: "placeholder", description: "MidiFlow does not currently maintain payout records." },
+      { key: "referrals", label: "Referrals", mode: "referralOverview", description: "Referral revenue, commissions, conversion, and top affiliates." },
+      { key: "referrers", label: "Referrers", mode: "collection", resourceKey: "referrals", editable: false, description: "Review top referrers, their codes, signups, and wallet balances." },
+      { key: "commissions", label: "Commissions", mode: "collection", resourceKey: "referrals/commissions", editable: false, description: "Pending, eligible, paid, refunded, and cancelled referral commissions." },
+      { key: "payout-requests", label: "Payout Requests", mode: "collection", resourceKey: "referrals/payouts", editable: false, description: "Approve, reject, and review referral payout requests." },
+      { key: "payout-history", label: "Payout History", mode: "collection", resourceKey: "referrals/payout-history", editable: false, description: "Completed referral payout transactions and processor references." },
+      { key: "referral-settings", label: "Settings", mode: "referralSettings", description: "Configure referral commission, payouts, eligibility, and fraud-related limits." },
       { key: "coupons", label: "Coupons", mode: "collection", resourceKey: "coupons" },
       { key: "paypal", label: "PayPal", mode: "collection", resourceKey: "payments", description: "PayPal order and capture records." },
       { key: "revenue-reports", label: "Revenue Reports", mode: "collection", resourceKey: "reports" },
@@ -328,6 +348,8 @@ function endpointForResource(tab: AdminTab) {
   if (tab.mode === "membershipUsers") return "/admin/memberships/users";
   if (tab.mode === "aiOrchestratorOverview") return "/admin/ai-orchestrator/overview";
   if (tab.mode === "songPackOverview") return "/admin/song-packs/overview";
+  if (tab.mode === "referralOverview") return "/admin/referrals/overview";
+  if (tab.mode === "referralSettings") return "/admin/referrals/settings";
   if (tab.mode === "audit") return "/admin/logs/audit";
   if (tab.mode === "users") return "/admin/users";
   if (tab.mode === "collection" && tab.resourceKey) return `/admin/${tab.resourceKey}`;
@@ -476,6 +498,8 @@ export default function AdminDashboardPage() {
   const [membershipUsers, setMembershipUsers] = useState<MembershipUserRow[]>([]);
   const [aiOverview, setAiOverview] = useState<AiOrchestratorOverview | null>(null);
   const [songPackOverview, setSongPackOverview] = useState<SongPackOverview | null>(null);
+  const [referralOverview, setReferralOverview] = useState<ReferralOverview | null>(null);
+  const [referralSettings, setReferralSettings] = useState<ReferralSettings | null>(null);
   const [editing, setEditing] = useState<Row | null>(null);
   const [payload, setPayload] = useState("{}");
   const [userEditor, setUserEditor] = useState<UserEditor | null>(null);
@@ -544,6 +568,8 @@ export default function AdminDashboardPage() {
     setMembershipUsers([]);
     setAiOverview(null);
     setSongPackOverview(null);
+    setReferralOverview(null);
+    setReferralSettings(null);
 
     try {
       if (activeTab.mode === "dashboard") {
@@ -568,6 +594,12 @@ export default function AdminDashboardPage() {
       } else if (activeTab.mode === "songPackOverview") {
         const body = await fetchAdmin(endpointForResource(activeTab), authUser.id);
         setSongPackOverview(body.data as SongPackOverview);
+      } else if (activeTab.mode === "referralOverview") {
+        const body = await fetchAdmin(endpointForResource(activeTab), authUser.id);
+        setReferralOverview(body.data as ReferralOverview);
+      } else if (activeTab.mode === "referralSettings") {
+        const body = await fetchAdmin(endpointForResource(activeTab), authUser.id);
+        setReferralSettings(body.data as ReferralSettings);
       } else if (activeTab.mode === "audit" || activeTab.mode === "collection") {
         const body = await fetchAdmin(endpointForResource(activeTab), authUser.id);
         setRows((body.data ?? []) as Row[]);
@@ -625,6 +657,27 @@ export default function AdminDashboardPage() {
       await load();
     } catch (reason) {
       toast.error(reason instanceof Error ? reason.message : "Invalid JSON payload.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveReferralSettings() {
+    if (!referralSettings) return;
+    try {
+      setSaving(true);
+      const response = await fetch(`${apiBase}/admin/referrals/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-user-id": userId },
+        credentials: "include",
+        body: JSON.stringify(referralSettings),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error ?? "Unable to save referral settings.");
+      setReferralSettings(body.data as ReferralSettings);
+      toast.success("Referral settings updated.");
+    } catch (reason) {
+      toast.error(reason instanceof Error ? reason.message : "Unable to save referral settings.");
     } finally {
       setSaving(false);
     }
@@ -761,7 +814,7 @@ export default function AdminDashboardPage() {
               <h1 className="mt-2 text-3xl font-black tracking-tight">{activeTab.label}</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-[#aaa3bd]">{activeTab.description ?? activeMenu.description}</p>
             </div>
-            {activeTab.mode === "collection" ? (
+            {activeTab.mode === "collection" && activeTab.editable !== false ? (
               <button type="button" onClick={() => { setEditing(null); setPayload("{}"); }} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold">
                 <Plus className="size-4" />
                 New record
@@ -941,6 +994,51 @@ export default function AdminDashboardPage() {
             </div>
           ) : null}
 
+          {!loading && activeTab.mode === "referralOverview" && referralOverview ? (
+            <div className="mt-8 space-y-8">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  ["Total referral revenue", currencyLabel(Math.round(referralOverview.totalReferralRevenue * 100))],
+                  ["Total commissions paid", currencyLabel(Math.round(referralOverview.totalCommissionsPaid * 100))],
+                  ["Pending commissions", currencyLabel(Math.round(referralOverview.pendingCommissions * 100))],
+                  ["Available commissions", currencyLabel(Math.round(referralOverview.availableCommissions * 100))],
+                  ["Referral signups", referralOverview.totalReferralSignups.toLocaleString()],
+                  ["Referral purchases", referralOverview.totalReferralPurchases.toLocaleString()],
+                  ["Conversion rate", `${(referralOverview.conversionRate * 100).toFixed(1)}%`],
+                  ["Total payouts", currencyLabel(Math.round(referralOverview.totalPayouts * 100))],
+                ].map(([label, value]) => (
+                  <article className="rounded-2xl border border-white/10 bg-white/[.03] p-5" key={String(label)}>
+                    <p className="text-sm text-[#aaa3bd]">{label}</p>
+                    <p className="mt-3 text-3xl font-bold">{String(value)}</p>
+                  </article>
+                ))}
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
+                <article className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+                  <h2 className="font-semibold">Top referrers</h2>
+                  <div className="mt-5 space-y-3">
+                    {referralOverview.topReferrers.map((item) => (
+                      <div key={`${item.referralCode}-${item.user}`} className="rounded-xl bg-black/20 px-4 py-3 text-sm">
+                        <div className="flex items-center justify-between gap-3"><p className="font-semibold text-white">{item.user}</p><p className="text-violet-200">{currencyLabel(Math.round(item.earnings * 100))}</p></div>
+                        <p className="mt-1 text-xs text-[#8f88a6]">{item.referralCode} · {item.signups} signups · {item.paidReferrals} paid referrals</p>
+                      </div>
+                    ))}
+                    {!referralOverview.topReferrers.length ? <p className="text-sm text-[#aaa3bd]">No referral leaders yet.</p> : null}
+                  </div>
+                </article>
+                <article className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+                  <h2 className="font-semibold">Monthly growth</h2>
+                  <div className="mt-5 grid gap-3 text-sm text-[#d4cfe0]">
+                    <div className="rounded-xl bg-black/20 px-4 py-3">Signups this month: {referralOverview.monthlyReferralGrowth.signups}</div>
+                    <div className="rounded-xl bg-black/20 px-4 py-3">Purchases this month: {referralOverview.monthlyReferralGrowth.purchases}</div>
+                    <div className="rounded-xl bg-black/20 px-4 py-3">Clicks this month: {referralOverview.monthlyReferralGrowth.clicks}</div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          ) : null}
+
           {!loading && activeTab.mode === "users" ? (
             <>
               {activeTab.userView === "suspended" ? <PlaceholderCard title="Suspended users" body="Suspend/reactivate actions are part of the requested architecture, but the current backend schema does not yet persist a suspension state. Use the user editor to adjust role or membership state until a dedicated suspension field is introduced." /> : null}
@@ -1026,6 +1124,28 @@ export default function AdminDashboardPage() {
             </div>
           ) : null}
 
+          {!loading && activeTab.mode === "referralSettings" && referralSettings ? (
+            <section className="mt-6 rounded-2xl border border-violet-400/30 bg-violet-500/[.05] p-5">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <label className="block text-sm font-medium">Program enabled<select value={String(referralSettings.enabled)} onChange={(event) => setReferralSettings((current) => current ? { ...current, enabled: event.target.value === "true" } : current)} className="field mt-2"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label className="block text-sm font-medium">Commission type<select value={referralSettings.defaultCommissionType} onChange={(event) => setReferralSettings((current) => current ? { ...current, defaultCommissionType: event.target.value as ReferralSettings["defaultCommissionType"] } : current)} className="field mt-2"><option value="percentage">percentage</option><option value="flat">flat</option></select></label>
+                <label className="block text-sm font-medium">Default commission rate<input type="number" min={0} max={100} value={referralSettings.defaultCommissionRate} onChange={(event) => setReferralSettings((current) => current ? { ...current, defaultCommissionRate: Number(event.target.value) } : current)} className="field mt-2" /></label>
+                <label className="block text-sm font-medium">Flat commission cents<input type="number" min={0} value={referralSettings.flatCommissionCents} onChange={(event) => setReferralSettings((current) => current ? { ...current, flatCommissionCents: Number(event.target.value) } : current)} className="field mt-2" /></label>
+                <label className="block text-sm font-medium">Minimum payout cents<input type="number" min={100} value={referralSettings.minimumPayoutCents} onChange={(event) => setReferralSettings((current) => current ? { ...current, minimumPayoutCents: Number(event.target.value) } : current)} className="field mt-2" /></label>
+                <label className="block text-sm font-medium">Eligibility delay days<input type="number" min={0} value={referralSettings.eligibilityDelayDays} onChange={(event) => setReferralSettings((current) => current ? { ...current, eligibilityDelayDays: Number(event.target.value) } : current)} className="field mt-2" /></label>
+                <label className="block text-sm font-medium">Cookie duration days<input type="number" min={1} value={referralSettings.cookieDurationDays} onChange={(event) => setReferralSettings((current) => current ? { ...current, cookieDurationDays: Number(event.target.value) } : current)} className="field mt-2" /></label>
+                <label className="block text-sm font-medium">Referral expiration days<input type="number" min={1} value={referralSettings.referralExpirationDays} onChange={(event) => setReferralSettings((current) => current ? { ...current, referralExpirationDays: Number(event.target.value) } : current)} className="field mt-2" /></label>
+                <label className="block text-sm font-medium">Max commission per user cents<input type="number" min={0} value={referralSettings.maximumCommissionPerUserCents} onChange={(event) => setReferralSettings((current) => current ? { ...current, maximumCommissionPerUserCents: Number(event.target.value) } : current)} className="field mt-2" /></label>
+                <label className="block text-sm font-medium">Max payout per month cents<input type="number" min={0} value={referralSettings.maximumPayoutPerMonthCents} onChange={(event) => setReferralSettings((current) => current ? { ...current, maximumPayoutPerMonthCents: Number(event.target.value) } : current)} className="field mt-2" /></label>
+                <label className="block text-sm font-medium">Allow self-referrals<select value={String(referralSettings.allowSelfReferrals)} onChange={(event) => setReferralSettings((current) => current ? { ...current, allowSelfReferrals: event.target.value === "true" } : current)} className="field mt-2"><option value="false">false</option><option value="true">true</option></select></label>
+                <label className="block text-sm font-medium">Allow multiple referrals<select value={String(referralSettings.allowMultipleReferrals)} onChange={(event) => setReferralSettings((current) => current ? { ...current, allowMultipleReferrals: event.target.value === "true" } : current)} className="field mt-2"><option value="false">false</option><option value="true">true</option></select></label>
+                <label className="block text-sm font-medium">Automatic approval<select value={String(referralSettings.automaticApproval)} onChange={(event) => setReferralSettings((current) => current ? { ...current, automaticApproval: event.target.value === "true" } : current)} className="field mt-2"><option value="false">false</option><option value="true">true</option></select></label>
+                <label className="block text-sm font-medium">Manual approval<select value={String(referralSettings.manualApproval)} onChange={(event) => setReferralSettings((current) => current ? { ...current, manualApproval: event.target.value === "true" } : current)} className="field mt-2"><option value="true">true</option><option value="false">false</option></select></label>
+              </div>
+              <button type="button" onClick={() => void saveReferralSettings()} disabled={saving} className="mt-5 flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold disabled:opacity-60"><Check className="size-4" />Save referral settings</button>
+            </section>
+          ) : null}
+
           {!loading && (activeTab.mode === "audit" || activeTab.mode === "collection") ? (
             <>
               <section className="mt-6 grid gap-4 xl:grid-cols-[1.25fr_.75fr]">
@@ -1041,7 +1161,7 @@ export default function AdminDashboardPage() {
                             </td>
                           ))}
                           <td className="w-28 p-4">
-                            {activeTab.mode === "collection" ? (
+                            {activeTab.mode === "collection" && activeTab.editable !== false ? (
                               <div className="flex gap-2">
                                 <button type="button" onClick={() => { setEditing(row); setPayload(editablePayload(row)); }} aria-label="Edit" className="grid size-8 place-items-center rounded-lg bg-white/8 hover:bg-white/15"><Pencil className="size-4" /></button>
                                 <button type="button" onClick={() => void removeRow(row)} aria-label="Delete" className="grid size-8 place-items-center rounded-lg bg-red-500/10 text-red-200 hover:bg-red-500/20"><Trash2 className="size-4" /></button>
@@ -1055,7 +1175,7 @@ export default function AdminDashboardPage() {
                   {!filteredRows.length ? <p className="p-6 text-sm text-[#aaa3bd]">No records are available for this tab.</p> : null}
                 </div>
 
-                {activeTab.mode === "collection" ? (
+                {activeTab.mode === "collection" && activeTab.editable !== false ? (
                   <section className="rounded-2xl border border-violet-400/30 bg-violet-500/[.05] p-4">
                     <div className="flex items-center justify-between">
                       <h2 className="flex items-center gap-2 font-semibold"><Database className="size-4 text-violet-300" />{editing ? "Edit JSON payload" : "Create JSON payload"}</h2>
