@@ -41,3 +41,5 @@ button { cursor: pointer; }
 .field:focus { border-color: rgba(169, 119, 255, .8); box-shadow: 0 0 0 3px rgba(138, 88, 255, .16); }
 .data-scroll { max-height: min(62vh, 720px); overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable both-edges; }
 .data-scroll-x { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-gutter: stable; }
+.scrollbar-hidden { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hidden::-webkit-scrollbar { display: none; }

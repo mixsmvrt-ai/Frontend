@@ -351,7 +351,7 @@ export default function ProjectPage() {
   return (
     <AppShell>
       <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl flex-col">
-        <div className="flex-1 space-y-5 overflow-y-auto px-1 py-5 md:px-4 md:py-7">
+        <div className="scrollbar-hidden flex-1 space-y-5 overflow-y-auto px-1 py-5 md:px-4 md:py-7">
           {loading ? <div className="h-20 animate-pulse rounded-2xl bg-white/5" /> : null}
           {messages.map((message) => {
             const isUser = message.role === "user";

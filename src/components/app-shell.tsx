@@ -245,7 +245,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="mx-3 border-t border-white/10" />
 
-      <div ref={menuRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+      <div ref={menuRef} className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-3 py-4">
         <div className="flex items-center justify-between px-3 py-2">
           <p className="text-[11px] font-bold uppercase tracking-[.14em] text-[#817d91]">Projects</p>
           <Link href="/projects" onClick={() => setMobileOpen(false)} className="text-xs font-semibold text-violet-300">Open all</Link>
