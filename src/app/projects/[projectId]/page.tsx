@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Bot, CircleDashed, Download, Heart, Loader2, Music2, RefreshCcw, Save, Sparkles, UserRound } from "lucide-react";
+import { Bot, CircleDashed, Download, Heart, Loader2, Music2, RefreshCcw, Sparkles, UserRound } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { promptSignIn, useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { GenerationComposer, type ComposerReplyState, type ComposerSubmitInput } from "@/features/generation/generation-composer";
 import { favoriteGeneration, generateMusic, generationExports, readGeneration, regenerateGeneration, type GenerationFile, type GenerationRecord } from "@/services/generations";
-import { projectsApi, type ProjectMessage, type ProjectRecord } from "@/services/projects";
+import { projectsApi, type ProjectMessage } from "@/services/projects";
 import { workspaceApi } from "@/services/workspace";
 
 type GenerationMap = Record<string, GenerationRecord>;
@@ -48,10 +47,7 @@ export default function ProjectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useViewerAuth();
-  const [project, setProject] = useState<ProjectRecord | null>(null);
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
-  const [notes, setNotes] = useState("");
-  const [versionCount, setVersionCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [generationMap, setGenerationMap] = useState<GenerationMap>({});
   const [exportMap, setExportMap] = useState<ExportMap>({});
@@ -63,16 +59,11 @@ export default function ProjectPage() {
 
   const loadMessages = useCallback(async () => {
     try {
-      const [projectResult, messagesResult, notesResult, versionsResult] = await Promise.all([
-        projectsApi.read(projectId),
+      const [messagesResult, versionsResult] = await Promise.all([
         projectsApi.messages(projectId),
-        workspaceApi.notes(projectId),
         workspaceApi.versions(projectId),
       ]);
-      setProject(projectResult.data);
       setMessages(messagesResult.data);
-      setNotes(notesResult.data?.content_markdown ?? "");
-      setVersionCount(versionsResult.data.length);
 
       const generationIds = Array.from(new Set([
         ...messagesResult.data.map((message) => message.generation_id).filter(Boolean),
@@ -102,19 +93,6 @@ export default function ProjectPage() {
   useEffect(() => {
     void loadMessages();
   }, [loadMessages]);
-
-  const saveNotes = async () => {
-    if (!isAuthenticated) {
-      promptSignIn(`/projects/${projectId}`);
-      return;
-    }
-    try {
-      await workspaceApi.saveNotes(projectId, notes);
-      toast.success("Project notes saved.");
-    } catch (reason) {
-      toast.error(reason instanceof Error ? reason.message : "Unable to save notes.");
-    }
-  };
 
   const loadExports = useCallback(async (generationId: string) => {
     if (exportMap[generationId]?.length) {
@@ -306,40 +284,9 @@ export default function ProjectPage() {
 
   return (
     <AppShell>
-      <section className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-5xl flex-col">
-        <header className="border-b border-white/10 pb-6">
-          <p className="text-xs font-bold uppercase tracking-[.16em] text-violet-300">Project conversation</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight">{project?.title ?? "Keep every iteration in the same musical world."}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#aaa3bd]">
-            {project?.description || "Every new direction uses the project's previous prompts and generated MIDI as context. Ask for a variation, swap an instrument, or develop the arrangement."}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3 text-xs text-[#9e98b0]">
-            <span className="rounded-full bg-white/5 px-3 py-1">{project?.genre ?? "No genre set"}</span>
-            <span className="rounded-full bg-white/5 px-3 py-1">{project?.bpm ? `${project.bpm} BPM` : "Tempo flexible"}</span>
-            <span className="rounded-full bg-white/5 px-3 py-1">{project?.musical_key ?? "Key open"}</span>
-            <span className="rounded-full bg-white/5 px-3 py-1">{versionCount} saved versions</span>
-            <Link href="/downloads" className="rounded-full bg-white/5 px-3 py-1 text-violet-200">Open downloads</Link>
-          </div>
-        </header>
-
-        <section className="mt-6 rounded-2xl border border-white/10 bg-white/[.03] p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Project notes</h2>
-            <button type="button" onClick={() => void saveNotes()} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold">
-              <Save className="size-3.5" />
-              Save notes
-            </button>
-          </div>
-          <textarea value={notes} onChange={(event) => setNotes(event.target.value)} className="mt-4 min-h-32 w-full rounded-xl border border-white/10 bg-[#0c0b18] p-4 text-sm text-white outline-none" placeholder="Keep arrangement ideas, plugin notes, and revision goals here." />
-        </section>
-
-        <div className="flex-1 space-y-5 py-7">
+      <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl flex-col bg-[#090909]">
+        <div className="flex-1 space-y-5 overflow-y-auto px-1 py-5 md:px-4 md:py-7">
           {loading ? <div className="h-20 animate-pulse rounded-2xl bg-white/5" /> : null}
-          {!loading && messages.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-violet-400/35 bg-violet-500/[.04] p-6 text-sm leading-6 text-[#c7c3d3]">
-              Start this project with a musical idea. Follow-ups such as &quot;make it a darker sustained piano&quot; will remain connected to what you create first.
-            </div>
-          ) : null}
           {messages.map((message) => {
             const isUser = message.role === "user";
             const isGeneration = Boolean(message.generation_id && messageGenerations.has(message.generation_id));
@@ -384,21 +331,10 @@ export default function ProjectPage() {
               <div className="max-w-[84%] rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm leading-6 text-[#ddd9e7]">
                 {composerReply.status === "processing" ? (
                   <>
-                    <p className="font-medium text-white">Working on your MIDI reply</p>
-                    <div className="mt-4 space-y-3">
-                      {composerReply.steps.map((step, index) => {
-                        const isDone = index < composerReply.activeStep;
-                        const isActive = index === composerReply.activeStep;
-                        return (
-                          <div key={step.title} className="flex items-start gap-3">
-                            <span className={`mt-1 block size-2.5 rounded-full ${isDone ? "bg-emerald-400" : isActive ? "animate-pulse bg-violet-300" : "bg-white/15"}`} />
-                            <div>
-                              <p className={`${isActive ? "text-white" : "text-[#c2bdd2]"}`}>{step.title}</p>
-                              <p className="text-xs text-[#9089a4]">{step.detail}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div className="flex items-center gap-1.5 py-1">
+                      <span className="size-2 animate-pulse rounded-full bg-violet-300" />
+                      <span className="size-2 animate-pulse rounded-full bg-violet-300 [animation-delay:150ms]" />
+                      <span className="size-2 animate-pulse rounded-full bg-violet-300 [animation-delay:300ms]" />
                     </div>
                   </>
                 ) : (
@@ -437,7 +373,7 @@ export default function ProjectPage() {
       ) : null}
         </div>
 
-        <div className="sticky bottom-0 bg-[#090816]/95 py-5 backdrop-blur">
+        <div className="sticky bottom-0 bg-[#090909]/95 py-5 backdrop-blur">
           <GenerationComposer compact projectId={projectId} onGenerated={() => void loadMessages()} onReplyStateChange={setComposerReply} onSubmitPrompt={submitProjectPrompt} />
         </div>
       </section>
