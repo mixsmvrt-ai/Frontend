@@ -30,8 +30,8 @@ type WorkspaceMenuProps = {
 
 function sidebarLinkClass(active: boolean) {
   return active
-    ? "flex items-center gap-3 rounded-xl bg-violet-600/90 px-3 py-2.5 text-sm font-semibold text-white"
-    : "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#cbc6d8] transition hover:bg-white/[.05] hover:text-white";
+    ? "flex items-center gap-3 rounded-xl bg-[#a7e2d9] px-3 py-2.5 text-sm font-semibold text-[#12151a]"
+    : "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#aeb3bd] transition hover:bg-white/[.05] hover:text-white";
 }
 
 function WorkspaceMenu({

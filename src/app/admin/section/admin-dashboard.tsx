@@ -771,46 +771,47 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <main className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#090816] text-white">
-      <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 lg:px-8">
-        <header className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(17,16,30,.96),rgba(9,8,22,.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,.28)] md:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Link href="/dashboard" className="text-lg font-black tracking-tight text-violet-200">MidiFlow</Link>
-              <span className="rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[.18em] text-violet-200">Admin</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="relative hidden w-72 md:block">
-                <Search className="absolute right-3 top-3 size-4 text-[#938e9f]" />
-                <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pr-9" placeholder={`Search ${activeTab.label.toLowerCase()}`} />
-              </label>
-              <div className="rounded-2xl border border-white/10 bg-white/[.04] px-4 py-2 text-right text-sm">
-                <p className="font-semibold text-white">{userEmail || "Administrator"}</p>
-                <p className="text-xs text-[#9b94af]">Full platform access</p>
-              </div>
-              <button type="button" onClick={() => setMobileMenuOpen((value) => !value)} className="grid size-10 place-items-center rounded-xl border border-white/10 bg-white/[.04] md:hidden" aria-label="Toggle admin navigation">
-                {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-              </button>
-            </div>
+    <main data-admin-shell className="min-h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#303139] p-3 text-[#f2f4f4] md:p-6">
+      <div className="mx-auto flex min-h-[calc(100dvh-3rem)] max-w-[1500px] overflow-hidden rounded-[24px] border border-white/[.06] bg-[#171820] shadow-[0_28px_80px_rgba(9,10,16,.35)]">
+        <aside className="hidden w-16 shrink-0 flex-col items-center border-r border-white/[.06] bg-[#111219] py-5 md:flex">
+          <Link href="/dashboard" className="grid size-9 place-items-center rounded-xl bg-[#a7e2d9] text-[#111219]" aria-label="MidiFlow dashboard"><Music2 className="size-5" /></Link>
+          <div className="mt-10 flex flex-1 flex-col items-center gap-6 text-[#747986]">
+            {MENUS.slice(0, 8).map((menu) => {
+              const Icon = menu.icon;
+              return <Link key={menu.key} href={menu.href} aria-label={menu.label} className={`grid size-9 place-items-center rounded-lg transition ${menu.key === activeMenu.key ? "bg-[#253c3e] text-[#a7e2d9]" : "hover:bg-white/[.06] hover:text-white"}`}><Icon className="size-4" /></Link>;
+            })}
           </div>
+          <Settings2 className="size-4 text-[#747986]" />
+        </aside>
 
-          <nav className={`${mobileMenuOpen ? "mt-4 grid" : "hidden md:grid"} gap-2 border-t border-white/10 pt-4 md:mt-6 md:grid-cols-5 lg:grid-cols-10`}>
+        <aside className={`${mobileMenuOpen ? "absolute inset-0 z-20 flex" : "hidden"} w-64 shrink-0 flex-col border-r border-white/[.06] bg-[#171820] p-5 md:relative md:flex`}>
+          <div className="flex items-center justify-between">
+            <Link href="/dashboard" className="text-xl font-black tracking-tight text-[#eaf2f1]">MidiFlow</Link>
+            <button type="button" onClick={() => setMobileMenuOpen(false)} className="grid size-8 place-items-center rounded-lg bg-white/[.06] md:hidden" aria-label="Close admin navigation"><X className="size-4" /></button>
+          </div>
+          <p className="mt-10 text-[10px] font-bold uppercase tracking-[.2em] text-[#707581]">Workspace</p>
+          <nav className="mt-4 space-y-1.5">
             {MENUS.map((menu) => {
               const Icon = menu.icon;
               const isActive = menu.key === activeMenu.key;
-              return (
-                <Link key={menu.key} href={menu.href} className={`rounded-2xl px-4 py-3 text-sm transition ${isActive ? "bg-violet-600 text-white shadow-[0_12px_32px_rgba(139,92,246,.24)]" : "bg-white/[.03] text-[#c9c4d7] hover:bg-white/[.06] hover:text-white"}`}>
-                  <div className="flex items-center gap-2">
-                    <Icon className="size-4" />
-                    <span className="font-semibold">{menu.label}</span>
-                  </div>
-                </Link>
-              );
+              return <Link key={menu.key} href={menu.href} onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive ? "bg-[#a7e2d9] font-bold text-[#13151b]" : "text-[#969ba6] hover:bg-white/[.05] hover:text-white"}`}><Icon className="size-4" /><span>{menu.label}</span></Link>;
             })}
           </nav>
-        </header>
+          <div className="mt-auto rounded-xl border border-white/[.06] bg-white/[.025] p-3 text-xs text-[#858b97]">System online<br /><span className="text-[#a7e2d9]">All services operational</span></div>
+        </aside>
 
-        <section className="mt-6 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(14,13,27,.96),rgba(10,9,22,.98))] p-5 md:p-6">
+        <div className="min-w-0 flex-1 bg-[#1b1c25]">
+          <header className="flex items-center gap-3 border-b border-white/[.06] px-4 py-4 md:px-7">
+            <button type="button" onClick={() => setMobileMenuOpen((value) => !value)} className="grid size-9 place-items-center rounded-lg bg-white/[.05] md:hidden" aria-label="Toggle admin navigation"><Menu className="size-4" /></button>
+            <label className="relative min-w-0 flex-1 md:max-w-xl">
+              <Search className="absolute left-3 top-3 size-4 text-[#777d89]" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} className="field h-10 border-0 bg-[#242631] pl-10 text-sm" placeholder={`Search ${activeTab.label.toLowerCase()}`} />
+            </label>
+            <div className="hidden text-right text-sm sm:block"><p className="font-semibold text-white">{userEmail || "Administrator"}</p><p className="text-xs text-[#7f8590]">Administrator</p></div>
+            <button type="button" className="grid size-9 place-items-center rounded-full border border-white/[.08] bg-white/[.04]" aria-label="Notifications"><Bell className="size-4 text-[#b4bbc2]" /></button>
+          </header>
+
+        <section className="p-4 md:p-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">{activeMenu.label}</p>
@@ -1192,6 +1193,7 @@ export default function AdminDashboardPage() {
             </>
           ) : null}
         </section>
+      </div>
       </div>
     </main>
   );
