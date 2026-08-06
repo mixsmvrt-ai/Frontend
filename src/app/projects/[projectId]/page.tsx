@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Bot, CircleDashed, Download, Heart, Loader2, Music2, RefreshCcw, Sparkles, UserRound } from "lucide-react";
+import { Bot, Check, CircleDashed, Download, Heart, Loader2, Music2, Pencil, RefreshCcw, Sparkles, UserRound, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -55,6 +55,9 @@ export default function ProjectPage() {
   const [composerReply, setComposerReply] = useState<ComposerReplyState | null>(null);
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [assistantTyping, setAssistantTyping] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [editingBusy, setEditingBusy] = useState(false);
   const initialPromptSubmittedRef = useRef(false);
 
   const loadMessages = useCallback(async () => {
@@ -203,6 +206,69 @@ export default function ProjectPage() {
 
   const messageGenerations = useMemo(() => new Set(messages.map((message) => message.generation_id).filter(Boolean) as string[]), [messages]);
 
+  const beginEditing = (message: ProjectMessage) => {
+    setEditingMessageId(message.id);
+    setEditingText(message.content);
+  };
+
+  const cancelEditing = () => {
+    if (editingBusy) return;
+    setEditingMessageId(null);
+    setEditingText("");
+  };
+
+  const submitEditedMessage = async (message: ProjectMessage) => {
+    const content = editingText.trim();
+    if (content.length < 3 || editingBusy) return;
+    if (!isAuthenticated) {
+      promptSignIn(`/projects/${projectId}`);
+      return;
+    }
+
+    const settings = message.generation_id ? generationMap[message.generation_id]?.generation_requests?.settings : undefined;
+    const originalSettings = settings as {
+      kind?: string;
+      key?: string;
+      scale?: string;
+      tempo?: number;
+      lengthBars?: number;
+      complexity?: "low" | "medium" | "high";
+      variationAmount?: number;
+      timeSignature?: [number, number];
+    } | undefined;
+    const kind = generationKinds.find((value) => value === originalSettings?.kind) ?? "melody";
+
+    setEditingBusy(true);
+    setPendingPrompt(content);
+    setComposerReply({ status: "processing", prompt: content, activeStep: 0, steps: generationProcessingSteps });
+    try {
+      await projectsApi.createMessage(projectId, {
+        content,
+        generation: {
+          kind,
+          key: originalSettings?.key,
+          scale: originalSettings?.scale === "major" ? "major" : "minor",
+          tempo: originalSettings?.tempo,
+          lengthBars: originalSettings?.lengthBars ?? 8,
+          complexity: originalSettings?.complexity ?? "medium",
+          variationAmount: originalSettings?.variationAmount ?? 0.5,
+          timeSignature: originalSettings?.timeSignature ?? [4, 4],
+        },
+      });
+      setEditingMessageId(null);
+      setEditingText("");
+      await loadMessages();
+      setPendingPrompt(null);
+      setComposerReply(null);
+    } catch (error) {
+      setPendingPrompt(null);
+      setComposerReply(null);
+      toast.error(error instanceof Error ? error.message : "Unable to resubmit this message.");
+    } finally {
+      setEditingBusy(false);
+    }
+  };
+
   const submitProjectPrompt = useCallback(async (input: ComposerSubmitInput) => {
     if (!isAuthenticated) {
       promptSignIn(`/projects/${projectId}`);
@@ -293,10 +359,34 @@ export default function ProjectPage() {
             const actionState = message.generation_id ? pending[message.generation_id] : undefined;
             const exports = message.generation_id ? exportMap[message.generation_id] : undefined;
             return (
-              <article key={message.id} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
+              <article key={message.id} className={`group flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
                 {!isUser && <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-violet-500/15 text-violet-200"><Bot className="size-4" /></div>}
-                <div className={`max-w-[84%] rounded-2xl px-4 py-3 text-sm leading-6 ${isUser ? "bg-violet-600 text-white" : "border border-white/10 bg-white/[.04] text-[#ddd9e7]"}`}>
-                  <p>{message.content}</p>
+                <div className={`relative max-w-[84%] rounded-2xl px-4 py-3 text-sm leading-6 ${isUser ? "bg-violet-600 text-white" : "border border-white/10 bg-white/[.04] text-[#ddd9e7]"}`}>
+                  {isUser && editingMessageId === message.id ? (
+                    <div className="min-w-[min(24rem,70vw)]">
+                      <textarea
+                        value={editingText}
+                        onChange={(event) => setEditingText(event.target.value)}
+                        onKeyDown={(event) => {
+                          if ((event.ctrlKey || event.metaKey) && event.key === "Enter") void submitEditedMessage(message);
+                        }}
+                        disabled={editingBusy}
+                        autoFocus
+                        className="min-h-20 w-full resize-y rounded-xl border border-white/20 bg-black/15 p-2 text-white outline-none placeholder:text-white/60"
+                        aria-label="Edit message"
+                      />
+                      <div className="mt-2 flex justify-end gap-2">
+                        <button type="button" onClick={cancelEditing} disabled={editingBusy} className="grid size-8 place-items-center rounded-full border border-white/20 text-white/80 hover:bg-white/10 disabled:opacity-50" aria-label="Cancel edit"><X className="size-4" /></button>
+                        <button type="button" onClick={() => void submitEditedMessage(message)} disabled={editingBusy || editingText.trim().length < 3} className="grid size-8 place-items-center rounded-full bg-white text-violet-700 disabled:opacity-50" aria-label="Resubmit edited message"><Check className="size-4" /></button>
+                      </div>
+                    </div>
+                  ) : <p>{message.content}</p>}
+                  {isUser && editingMessageId !== message.id ? (
+                    <button type="button" onClick={() => beginEditing(message)} className="absolute -left-11 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-full border border-white/10 bg-[#171427] p-2 text-xs font-medium text-[#dcd8e8] shadow-lg transition hover:bg-[#211d35] md:-left-14 md:invisible md:px-2.5 md:py-1.5 md:group-hover:visible" aria-label="Edit message">
+                      <Pencil className="size-3.5" />
+                      <span className="hidden md:inline">Edit</span>
+                    </button>
+                  ) : null}
                   {isGeneration ? (
                     <>
                       <p className="mt-2 flex items-center gap-1 text-xs text-violet-200"><Music2 className="size-3" /> MIDI added to this project</p>
