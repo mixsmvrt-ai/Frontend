@@ -1,21 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUp, CircleDashed, Cloud, Download, Flame, Gem, Plus, Rocket, Sparkles } from "lucide-react";
+import { ArrowUp, CircleDashed, Download, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { useMembership } from "@/features/billing/use-membership";
 import { projectsApi } from "@/services/projects";
-
-const styles = [
-  { prompt: "Chill lo-fi chords", detail: "80 BPM - C Major", icon: Cloud },
-  { prompt: "Drill beat melody", detail: "142 BPM - D Minor", icon: Flame },
-  { prompt: "Emotional piano melody", detail: "90 BPM - G Major", icon: Sparkles },
-  { prompt: "R&B chord progression", detail: "70 BPM - F Minor", icon: Gem },
-  { prompt: "Upbeat pop hook", detail: "120 BPM - C Major", icon: Rocket },
-];
 
 const keys = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
 const processingSteps = [
@@ -49,18 +41,6 @@ function projectTitleFromPrompt(value: string) {
   return `${clean.slice(0, 45).trim()}...`;
 }
 
-function formatResetDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(value));
-}
-
-function usageThreshold(usagePercent: number) {
-  if (usagePercent >= 100) return 100;
-  if (usagePercent >= 95) return 95;
-  if (usagePercent >= 90) return 90;
-  if (usagePercent >= 75) return 75;
-  return null;
-}
-
 export function GenerationComposer({ compact = false, projectId, onGenerated, onReplyStateChange, onSubmitPrompt }: { compact?: boolean; projectId?: string; onGenerated?: () => void; onReplyStateChange?: (state: ComposerReplyState | null) => void; onSubmitPrompt?: (input: ComposerSubmitInput) => Promise<void> }) {
   const router = useRouter();
   const { isAuthenticated, authResolved } = useViewerAuth();
@@ -76,23 +56,6 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
   const [localReplyState, setLocalReplyState] = useState<ComposerReplyState | null>(null);
   const processingTimerRef = useRef<number | null>(null);
   const textCredits = membership?.credits;
-  const threshold = textCredits ? usageThreshold(textCredits.usagePercent) : null;
-  const usageBanner = useMemo(() => {
-    if (!textCredits || threshold === null) return null;
-    const resetLabel = formatResetDate(textCredits.resetsOn);
-    if (threshold === 100) {
-      return {
-        tone: "border-red-400/30 bg-red-500/10 text-red-100",
-        title: `You have used all ${textCredits.textToMidiGenerationLimit} text-to-MIDI generations for this month.`,
-        detail: `Credits reset at the end of the month on ${resetLabel}.`,
-      };
-    }
-    return {
-      tone: threshold >= 95 ? "border-amber-400/30 bg-amber-500/10 text-amber-50" : "border-violet-400/30 bg-violet-500/10 text-violet-50",
-      title: `You have used ${threshold}% of this month's text-to-MIDI credits.`,
-      detail: `${textCredits.textToMidiGenerationsRemaining} generations left. Credits reset at the end of the month on ${resetLabel}.`,
-    };
-  }, [textCredits, threshold]);
   const creditsExhausted = Boolean(isAuthenticated && textCredits && textCredits.balance < textCredits.textToMidiCost);
 
   useEffect(() => () => {
@@ -257,17 +220,11 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
 
   return (
     <section className={`w-full ${compact ? "" : "mx-auto max-w-[780px]"}`}>
-      {usageBanner ? (
-        <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${usageBanner.tone}`}>
-          <p className="font-semibold">{usageBanner.title}</p>
-          <p className="mt-1 text-xs opacity-90">{usageBanner.detail}</p>
-        </div>
-      ) : null}
       <div ref={composerRef} className="relative rounded-2xl border border-violet-500/80 bg-[#0e0e1d]/90 p-3 shadow-[0_0_40px_rgba(104,58,255,.10)]">
         <textarea
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
-          placeholder="Example: Dark trap melody in A minor, piano with bell, emotional vibe"
+          placeholder="Describe your melody..."
           aria-label="Music generation prompt"
           className="min-h-20 w-full resize-none bg-transparent px-3 py-3 text-[16px] leading-7 text-white outline-none placeholder:text-[#8f8da3]"
         />
@@ -405,22 +362,6 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
           )}
         </div>
       ) : null}
-      {!compact && (
-        <>
-          <p className="mt-7 text-center text-[15px] text-[#a6a4b5]">Or try something popular</p>
-          <div className="mx-auto mt-4 grid max-w-[780px] grid-cols-1 justify-center gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {styles.map(({ prompt: suggestion, detail, icon: Icon }) => (
-              <button key={suggestion} onClick={() => setPrompt(suggestion)} className="group rounded-xl border border-white/[.07] bg-[#12121f] p-4 text-left transition hover:-translate-y-0.5 hover:border-violet-400/60 hover:bg-[#18172a]">
-                <div className="flex items-center gap-3">
-                  <Icon className="size-6 shrink-0 text-fuchsia-500" />
-                  <span className="text-sm font-semibold leading-4 text-white">{suggestion}</span>
-                </div>
-                <p className="mt-3 text-xs text-[#9290a3]">{detail}</p>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
     </section>
   );
 }
