@@ -306,7 +306,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div ref={workspaceMenuRef} className="pointer-events-none absolute bottom-4 right-4 z-20 md:hidden">
         <div className={`pointer-events-none fixed inset-0 z-[60] flex items-center justify-center p-4 transition duration-200 ${workspaceMenuOpen ? "opacity-100" : "opacity-0"}`}>
-          <div className={`pointer-events-auto max-h-[calc(100dvh-2rem)] w-[min(360px,calc(100vw-2rem))] origin-center overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100" : "translate-y-2 scale-95"}`}>
+          <div className={`${workspaceMenuOpen ? "pointer-events-auto" : "pointer-events-none"} max-h-[calc(100dvh-2rem)] w-[min(360px,calc(100vw-2rem))] origin-center overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100" : "translate-y-2 scale-95"}`}>
           <WorkspaceMenu
             isAuthenticated={isAuthenticated}
             membership={membership}
@@ -358,7 +358,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div ref={desktopWorkspaceMenuRef} className="absolute bottom-4 right-4 hidden md:block">
           <div className={`pointer-events-none fixed inset-0 z-[60] flex items-center justify-center p-4 transition duration-200 ${workspaceMenuOpen ? "opacity-100" : "opacity-0"}`}>
-            <div className={`pointer-events-auto max-h-[calc(100dvh-2rem)] w-[min(400px,calc(100vw-2rem))] origin-center overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100" : "translate-y-2 scale-95"}`}>
+            <div className={`${workspaceMenuOpen ? "pointer-events-auto" : "pointer-events-none"} max-h-[calc(100dvh-2rem)] w-[min(400px,calc(100vw-2rem))] origin-center overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100" : "translate-y-2 scale-95"}`}>
             <WorkspaceMenu
               isAuthenticated={isAuthenticated}
               membership={membership}
