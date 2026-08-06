@@ -279,7 +279,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="space-y-1">
           {projectList.map((project) => (
             <div key={project.id} onPointerDown={(event) => startProjectLongPress(project.id, event)} onPointerUp={clearProjectLongPress} onPointerCancel={clearProjectLongPress} onPointerLeave={clearProjectLongPress} onContextMenu={(event) => event.preventDefault()} className="group relative flex items-center rounded-xl pr-1 hover:bg-white/[.055]">
-              <Link href={`/projects/${project.id}`} onClick={(event) => { if (suppressProjectClickRef.current) { event.preventDefault(); suppressProjectClickRef.current = false; return; } setMobileOpen(false); }} className={`min-w-0 flex-1 truncate rounded-xl px-3 py-2.5 text-sm transition ${pathname === `/projects/${project.id}` ? "bg-white/[.07] text-white" : "text-[#c8c4d3] group-hover:text-white"}`}>
+              <Link href={`/projects/${project.id}`} onClick={(event: React.MouseEvent<HTMLAnchorElement>) => { if (suppressProjectClickRef.current) { event.preventDefault(); suppressProjectClickRef.current = false; return; } setMobileOpen(false); }} className={`min-w-0 flex-1 truncate rounded-xl px-3 py-2.5 text-sm transition ${pathname === `/projects/${project.id}` ? "bg-white/[.07] text-white" : "text-[#c8c4d3] group-hover:text-white"}`}>
                 {project.title}
               </Link>
               <button

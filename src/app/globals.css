@@ -52,3 +52,11 @@ button { cursor: pointer; }
 [data-admin-shell] .text-violet-200 { color: #a7e2d9 !important; }
 [data-admin-shell] .border-violet-400\/30,
 [data-admin-shell] .border-violet-400\/50 { border-color: rgba(167, 226, 217, .35) !important; }
+[data-admin-shell] article.rounded-2xl,
+[data-admin-shell] section.rounded-2xl,
+[data-admin-shell] section.rounded-3xl { background-color: #20212b; border-color: rgba(255,255,255,.07); }
+[data-admin-shell] table thead { background-color: #242631 !important; }
+[data-admin-shell] table tbody tr { border-color: rgba(255,255,255,.06) !important; }
+[data-admin-shell] textarea,
+[data-admin-shell] .bg-\[\#0c0b18\] { background-color: #13151c !important; }
+[data-admin-shell] .bg-black\/20 { background-color: rgba(10,12,17,.34) !important; }

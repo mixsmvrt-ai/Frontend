@@ -33,6 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/lib/supabase/browser";
 import type { ReferralSettings } from "@/services/referrals";
 
@@ -450,6 +451,33 @@ function createDashboardMetrics(bundle: DashboardBundle) {
   };
 }
 
+function createTrendData(bundle: DashboardBundle) {
+  const days = Array.from({ length: 14 }, (_, index) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (13 - index));
+    return { date, label: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }), revenue: 0, generations: 0 };
+  });
+  const dayKey = (value: string) => { const date = new Date(value); date.setHours(0, 0, 0, 0); return date.getTime(); };
+  bundle.payments.filter((row) => row.status === "completed").forEach((row) => {
+    const target = days.find((day) => day.date.getTime() === dayKey(String(row.created_at ?? row.updated_at ?? "")));
+    if (target) target.revenue += Number(row.amount_cents ?? 0) / 100;
+  });
+  bundle.generations.forEach((row) => {
+    const target = days.find((day) => day.date.getTime() === dayKey(String(row.created_at ?? "")));
+    if (target) target.generations += 1;
+  });
+  return days;
+}
+
+function createMembershipChartData(bundle: DashboardBundle) {
+  return [
+    { name: "Trial", value: bundle.overview?.trialUsers ?? 0, color: "#a7e2d9" },
+    { name: "Plus", value: bundle.overview?.proUsers ?? 0, color: "#a875ff" },
+    { name: "Expired", value: bundle.overview?.expiredUsers ?? 0, color: "#f0a4c4" },
+  ];
+}
+
 function filterUsersForView(users: UserRow[], view: UserView) {
   if (view === "all") return users;
   if (view === "trial") return users.filter((user) => user.membership_type === "trial");
@@ -627,6 +655,8 @@ export default function AdminDashboardPage() {
   }, [activeMenu.key, activeTab.key]);
 
   const dashboardMetrics = useMemo(() => (dashboard ? createDashboardMetrics(dashboard) : null), [dashboard]);
+  const trendData = useMemo(() => (dashboard ? createTrendData(dashboard) : []), [dashboard]);
+  const membershipChartData = useMemo(() => (dashboard ? createMembershipChartData(dashboard) : []), [dashboard]);
   const visibleUsers = useMemo(() => filterUsersForView(users, activeTab.userView ?? "all"), [activeTab.userView, users]);
   const filteredRows = useMemo(() => {
     const base = filterRowsForTab(rows, activeMenu.key, activeTab.key);
@@ -860,13 +890,56 @@ export default function AdminDashboardPage() {
                   { label: "Voice-to-MIDI conversions", value: dashboardMetrics.voiceConversions.toLocaleString(), icon: Music2 },
                   { label: "AI requests today", value: dashboardMetrics.aiDailyRequests.toLocaleString(), icon: Bot },
                   { label: "AI tokens today", value: dashboardMetrics.aiTokensToday.toLocaleString(), icon: Sparkles },
-                ].map(({ label, value, icon: Icon }) => (
+                ].slice(0, 6).map(({ label, value, icon: Icon }) => (
                   <article key={label} className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
                     <Icon className="size-5 text-violet-300" />
                     <p className="mt-4 text-sm text-[#aaa3bd]">{label}</p>
                     <p className="mt-3 text-3xl font-bold">{value}</p>
                   </article>
                 ))}
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1.45fr_.75fr]">
+                <article className="rounded-2xl border border-white/[.07] bg-[#20212b] p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div><p className="text-sm font-semibold text-white">Revenue overview</p><p className="mt-1 text-xs text-[#858b97]">Revenue and generation activity over the last 14 days</p></div>
+                    <span className="rounded-md border border-white/[.08] px-2.5 py-1 text-[11px] text-[#9ca2ad]">Last 14 days</span>
+                  </div>
+                  <div className="mt-5 h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={trendData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                        <defs><linearGradient id="adminRevenueFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a875ff" stopOpacity={0.36} /><stop offset="100%" stopColor="#a875ff" stopOpacity={0} /></linearGradient></defs>
+                        <CartesianGrid stroke="#ffffff" strokeOpacity={0.06} vertical={false} />
+                        <XAxis dataKey="label" tick={{ fill: "#777d89", fontSize: 11 }} axisLine={false} tickLine={false} interval={2} />
+                        <YAxis yAxisId="revenue" tick={{ fill: "#777d89", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value}`} />
+                        <YAxis yAxisId="generations" orientation="right" hide />
+                        <Tooltip contentStyle={{ background: "#171820", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#fff" }} labelStyle={{ color: "#a7e2d9" }} />
+                        <Area yAxisId="revenue" type="monotone" dataKey="revenue" stroke="#a875ff" strokeWidth={2} fill="url(#adminRevenueFill)" name="Revenue" />
+                        <Area yAxisId="generations" type="monotone" dataKey="generations" stroke="#a7e2d9" strokeWidth={2} fill="none" name="Generations" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </article>
+
+                <article className="rounded-2xl border border-white/[.07] bg-[#20212b] p-5">
+                  <p className="text-sm font-semibold text-white">Membership mix</p>
+                  <p className="mt-1 text-xs text-[#858b97]">Current account distribution</p>
+                  <div className="relative mt-3 h-52">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart><Pie data={membershipChartData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={78} paddingAngle={3} stroke="none">{membershipChartData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}</Pie><Tooltip contentStyle={{ background: "#171820", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#fff" }} /></PieChart>
+                    </ResponsiveContainer>
+                    <div className="pointer-events-none absolute inset-0 grid place-items-center"><div className="text-center"><p className="text-2xl font-bold text-white">{dashboardMetrics.totalUsers.toLocaleString()}</p><p className="text-[10px] uppercase tracking-[.14em] text-[#7f8590]">Users</p></div></div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center text-[11px]">{membershipChartData.map((entry) => <div key={entry.name}><span className="mx-auto mb-1 block size-2 rounded-full" style={{ backgroundColor: entry.color }} /><p className="text-[#a7adb8]">{entry.name}</p><p className="mt-1 font-semibold text-white">{entry.value.toLocaleString()}</p></div>)}</div>
+                </article>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1fr_.85fr]">
+                <article className="rounded-2xl border border-white/[.07] bg-[#20212b] p-5">
+                  <div className="flex items-center justify-between"><div><p className="text-sm font-semibold text-white">Generation activity</p><p className="mt-1 text-xs text-[#858b97]">MIDI output by day</p></div><BarChart3 className="size-4 text-[#a7e2d9]" /></div>
+                  <div className="mt-5 h-44"><ResponsiveContainer width="100%" height="100%"><BarChart data={trendData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}><CartesianGrid stroke="#ffffff" strokeOpacity={0.06} vertical={false} /><XAxis dataKey="label" tick={{ fill: "#777d89", fontSize: 10 }} axisLine={false} tickLine={false} interval={2} /><YAxis tick={{ fill: "#777d89", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} /><Tooltip contentStyle={{ background: "#171820", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#fff" }} /><Bar dataKey="generations" fill="#a7e2d9" radius={[4, 4, 0, 0]} name="Generations" /></BarChart></ResponsiveContainer></div>
+                </article>
+                <article className="rounded-2xl border border-white/[.07] bg-[#20212b] p-5"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold text-white">Payout requests</p><p className="mt-1 text-xs text-[#858b97]">Recent payment activity</p></div><Link href="/admin/payments" className="text-xs font-semibold text-[#a7e2d9]">View all</Link></div><div className="mt-4 space-y-3">{dashboard.payments.slice(0, 4).map((payment, index) => <div key={String(payment.id ?? index)} className="flex items-center justify-between gap-3 border-b border-white/[.06] pb-3 last:border-0 last:pb-0"><div className="min-w-0"><p className="truncate text-xs font-semibold text-[#e4e6e8]">{String(payment.payment_kind ?? "Payment")}</p><p className="mt-1 text-[11px] text-[#777d89]">{new Date(String(payment.created_at ?? Date.now())).toLocaleDateString()}</p></div><span className="text-sm font-semibold text-[#a7e2d9]">{currencyLabel(Number(payment.amount_cents ?? 0))}</span></div>)}{!dashboard.payments.length ? <p className="text-xs text-[#858b97]">No payments recorded yet.</p> : null}</div></article>
               </div>
 
               <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
