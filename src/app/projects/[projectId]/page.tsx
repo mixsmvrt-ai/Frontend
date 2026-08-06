@@ -467,7 +467,7 @@ export default function ProjectPage() {
         </div>
 
         <div className="pb-32">
-          <GenerationComposer compact projectId={projectId} onGenerated={() => void loadMessages()} onReplyStateChange={setComposerReply} onSubmitPrompt={submitProjectPrompt} />
+          <GenerationComposer projectId={projectId} onGenerated={() => void loadMessages()} onReplyStateChange={setComposerReply} onSubmitPrompt={submitProjectPrompt} />
         </div>
       </section>
     </AppShell>

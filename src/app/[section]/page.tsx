@@ -23,6 +23,6 @@ export default async function WorkspacePage({ params }: { params: Promise<{ sect
   const generator = section === "dashboard" || section === "generate";
   return <AppShell>
     <header className="mb-8 flex flex-wrap items-start justify-between gap-4"><div><p className="mb-2 text-xs font-bold uppercase tracking-[.16em] text-violet-300">Workspace</p><h1 className="text-3xl font-black tracking-tight">{page.title}</h1><p className="mt-2 max-w-2xl text-[#aaa3bd]">{page.copy}</p></div>{section === "billing" && <Link href="/upgrade" className="rounded-lg bg-violet-500 px-4 py-2 text-sm font-bold">Buy Pro Pass</Link>}</header>
-    {generator ? <GenerationComposer compact /> : <section className="glass rounded-2xl p-6"><h2 className="text-lg font-bold">{page.title}</h2><p className="mt-2 text-sm text-[#aaa3bd]">Account-specific data becomes available after your Supabase project and payment credentials are configured.</p></section>}
+    {generator ? <GenerationComposer /> : <section className="glass rounded-2xl p-6"><h2 className="text-lg font-bold">{page.title}</h2><p className="mt-2 text-sm text-[#aaa3bd]">Account-specific data becomes available after your Supabase project and payment credentials are configured.</p></section>}
   </AppShell>;
 }
