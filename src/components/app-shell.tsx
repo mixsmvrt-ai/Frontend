@@ -109,6 +109,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [authResolved, setAuthResolved] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const workspaceMenuRef = useRef<HTMLDivElement>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const suppressProjectClickRef = useRef(false);
   const { membership } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
 
   useEffect(() => {
@@ -164,6 +166,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     document.addEventListener("mousedown", closeMenu);
     return () => document.removeEventListener("mousedown", closeMenu);
   }, []);
+
+  const clearProjectLongPress = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const startProjectLongPress = (projectId: string, event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "touch") return;
+    clearProjectLongPress();
+    longPressTimerRef.current = window.setTimeout(() => {
+      suppressProjectClickRef.current = true;
+      setMenuId(projectId);
+      longPressTimerRef.current = null;
+    }, 500);
+  };
 
   useEffect(() => {
     if (!mobileOpen) {
@@ -258,8 +277,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="space-y-1">
           {projectList.map((project) => (
-            <div key={project.id} className="group relative flex items-center rounded-xl pr-1 hover:bg-white/[.055]">
-              <Link href={`/projects/${project.id}`} onClick={() => setMobileOpen(false)} className={`min-w-0 flex-1 truncate rounded-xl px-3 py-2.5 text-sm transition ${pathname === `/projects/${project.id}` ? "bg-white/[.07] text-white" : "text-[#c8c4d3] group-hover:text-white"}`}>
+            <div key={project.id} onPointerDown={(event) => startProjectLongPress(project.id, event)} onPointerUp={clearProjectLongPress} onPointerCancel={clearProjectLongPress} onPointerLeave={clearProjectLongPress} onContextMenu={(event) => event.preventDefault()} className="group relative flex items-center rounded-xl pr-1 hover:bg-white/[.055]">
+              <Link href={`/projects/${project.id}`} onClick={(event) => { if (suppressProjectClickRef.current) { event.preventDefault(); suppressProjectClickRef.current = false; return; } setMobileOpen(false); }} className={`min-w-0 flex-1 truncate rounded-xl px-3 py-2.5 text-sm transition ${pathname === `/projects/${project.id}` ? "bg-white/[.07] text-white" : "text-[#c8c4d3] group-hover:text-white"}`}>
                 {project.title}
               </Link>
               <button
@@ -271,7 +290,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Ellipsis className="size-4" />
               </button>
               {menuId === project.id && (
-                <div className="absolute right-1 top-9 z-50 w-40 rounded-xl border border-white/10 bg-[#1a1828] p-1 shadow-2xl">
+                <div className="absolute right-1 top-9 z-50 w-[min(10rem,calc(100vw-2rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-xl border border-white/10 bg-[#1a1828] p-1 shadow-2xl">
                   <button type="button" onClick={() => void projectAction("rename", project)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/10"><Ellipsis className="size-3.5" />Rename</button>
                   <button type="button" onClick={() => void projectAction("duplicate", project)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/10"><Copy className="size-3.5" />Duplicate</button>
                   <button type="button" onClick={() => void projectAction("archive", project)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/10"><Archive className="size-3.5" />Archive</button>
@@ -285,7 +304,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div ref={workspaceMenuRef} className="pointer-events-none absolute bottom-4 right-4 z-20 md:hidden">
-        <div className={`pointer-events-auto absolute bottom-16 right-0 w-[min(320px,calc(100vw-2.5rem))] origin-bottom-right transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-2 scale-95 opacity-0"}`}>
+        <div className={`pointer-events-auto absolute bottom-16 right-0 max-h-[calc(100dvh-6rem)] w-[min(320px,calc(100vw-2rem))] origin-bottom-right overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-2 scale-95 opacity-0"}`}>
           <WorkspaceMenu
             isAuthenticated={isAuthenticated}
             membership={membership}
@@ -334,8 +353,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className={`fixed inset-y-0 left-0 z-50 flex w-[290px] shrink-0 flex-col border-r border-white/10 bg-[#0c0b18] transition-transform md:sticky md:top-0 md:z-20 md:h-screen md:w-80 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         {sidebar}
 
-        <div className="group absolute bottom-4 right-4 hidden md:block">
-          <div className="pointer-events-none absolute bottom-16 right-0 z-30 w-[320px] origin-bottom-right translate-y-2 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        <div className="absolute bottom-4 right-4 hidden md:block">
+          <div className={`absolute bottom-16 right-0 z-30 max-h-[calc(100dvh-6rem)] w-[min(320px,calc(100vw-2rem))] origin-bottom-right overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}>
             <WorkspaceMenu
               isAuthenticated={isAuthenticated}
               membership={membership}
