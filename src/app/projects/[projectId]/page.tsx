@@ -380,13 +380,16 @@ export default function ProjectPage() {
                         <button type="button" onClick={() => void submitEditedMessage(message)} disabled={editingBusy || editingText.trim().length < 3} className="grid size-8 place-items-center rounded-full bg-white text-violet-700 disabled:opacity-50" aria-label="Resubmit edited message"><Check className="size-4" /></button>
                       </div>
                     </div>
-                  ) : <p>{message.content}</p>}
-                  {isUser && editingMessageId !== message.id ? (
-                    <button type="button" onClick={() => beginEditing(message)} className="absolute -left-11 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-full border border-white/10 bg-[#171427] p-2 text-xs font-medium text-[#dcd8e8] shadow-lg transition hover:bg-[#211d35] md:-left-14 md:invisible md:px-2.5 md:py-1.5 md:group-hover:visible" aria-label="Edit message">
-                      <Pencil className="size-3.5" />
-                      <span className="hidden md:inline">Edit</span>
-                    </button>
-                  ) : null}
+                  ) : (
+                    <div className="flex items-end gap-3">
+                      <p>{message.content}</p>
+                      {isUser ? (
+                        <button type="button" onClick={() => beginEditing(message)} className="shrink-0 text-white/65 transition hover:text-white" aria-label="Edit message">
+                          <Pencil className="size-3.5" />
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
                   {isGeneration ? (
                     <>
                       <p className="mt-2 flex items-center gap-1 text-xs text-violet-200"><Music2 className="size-3" /> MIDI added to this project</p>
