@@ -12,8 +12,8 @@ import { projectsApi } from "@/services/projects";
 type Project = { id: string; title: string; updated_at: string };
 
 const bottomLinks = [
-  { label: "Downloads", href: "/downloads", icon: Download },
-  { label: "Pricing", href: "/billing", icon: Sparkles },
+  { label: "Downloads", href: "/download", icon: Download },
+  { label: "Pricing", href: "/pricing", icon: Sparkles },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -231,7 +231,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isBottomActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const showAdminLink = Boolean(isAuthenticated && membership?.isAdmin);
   const showPlanPricing = pathname === "/";
-  const pricingHref = showPlanPricing ? "/pricing" : "/billing";
+  const pricingHref = "/pricing";
   const workspaceLinks = isAuthenticated ? [...bottomLinks, { label: "Referrals", href: "/referrals", icon: Sparkles }] : bottomLinks;
 
   const sidebar = (

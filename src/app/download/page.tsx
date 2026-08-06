@@ -1,5 +1,32 @@
-import { Apple, Download, MonitorDown } from "lucide-react";
+import { Apple, MonitorDown } from "lucide-react";
 import { PublicFooter } from "@/components/public-footer";
 import { PublicNavbar } from "@/components/public-navbar";
-const releases = [["MidiFlow Desktop 0.9.0", "Improved MIDI export, audio capture reliability, and account sync."], ["MidiFlow Desktop 0.8.4", "Refined generation controls and improved project loading."], ["MidiFlow Desktop 0.8.0", "First public desktop beta release."]];
-export default function DownloadPage() { return <main className="min-h-screen bg-[#070713]"><PublicNavbar /><section className="mx-auto max-w-6xl px-5 py-20 lg:px-8"><p className="text-sm font-semibold text-violet-300">DESKTOP BETA</p><h1 className="mt-4 text-5xl font-bold tracking-[-.05em] sm:text-6xl">Keep MidiFlow close to your DAW.</h1><p className="mt-5 max-w-2xl text-lg text-[#aaa6b8]">The desktop app keeps the generator, exports, and your music library one shortcut away.</p><div className="mt-14 grid gap-5 md:grid-cols-3"><a href="#requirements" className="glass rounded-2xl p-6 transition hover:-translate-y-1 hover:border-violet-400/50"><MonitorDown className="size-8 text-violet-300" /><h2 className="mt-8 text-xl font-semibold">Windows download</h2><p className="mt-2 text-sm text-[#9d99ac]">Windows 10 or newer · 64-bit</p><span className="mt-7 inline-flex rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium">Download for Windows</span></a><a href="#requirements" className="glass rounded-2xl p-6 transition hover:-translate-y-1 hover:border-violet-400/50"><Apple className="size-8 text-violet-300" /><h2 className="mt-8 text-xl font-semibold">macOS download</h2><p className="mt-2 text-sm text-[#9d99ac]">macOS 13 or newer · Apple silicon</p><span className="mt-7 inline-flex rounded-lg bg-white/10 px-4 py-2.5 text-sm font-medium">Download for macOS</span></a><article className="rounded-2xl border border-white/10 bg-white/[.02] p-6 opacity-80"><Download className="size-8 text-[#7e7990]" /><h2 className="mt-8 text-xl font-semibold">Linux</h2><p className="mt-2 text-sm text-[#9d99ac]">Desktop support is currently in development.</p><span className="mt-7 inline-flex rounded-lg border border-white/10 px-4 py-2.5 text-sm">Coming soon</span></article></div><div className="mt-16 grid gap-8 lg:grid-cols-2"><section id="requirements"><h2 className="text-2xl font-semibold">System requirements</h2><ul className="mt-5 space-y-3 text-sm leading-6 text-[#aaa6b8]"><li>Windows 10+ or macOS 13+ on a supported 64-bit computer.</li><li>4 GB available memory and 500 MB free storage.</li><li>An active internet connection for generation and cloud sync.</li><li>A MIDI-compatible DAW for opening exported files.</li></ul></section><section><h2 className="text-2xl font-semibold">Release notes</h2><div className="mt-5 space-y-3">{releases.map(([version, notes]) => <article className="glass rounded-xl p-4" key={version}><h3 className="font-medium">{version}</h3><p className="mt-1 text-sm text-[#aaa6b8]">{notes}</p></article>)}</div></section></div></section><PublicFooter /></main>; }
+
+const platforms = [
+  { name: "Windows", detail: "Windows 10 or newer · 64-bit", icon: MonitorDown },
+  { name: "Apple", detail: "macOS 13 or newer · Apple silicon", icon: Apple },
+];
+
+export default function DownloadPage() {
+  return (
+    <main className="min-h-screen bg-[#070713]">
+      <PublicNavbar />
+      <section className="mx-auto max-w-6xl px-5 py-20 lg:px-8">
+        <p className="text-sm font-semibold text-violet-300">DESKTOP APP</p>
+        <h1 className="mt-4 text-5xl font-bold tracking-[-.05em] sm:text-6xl">MidiFlow on your computer.</h1>
+        <p className="mt-5 max-w-2xl text-lg text-[#aaa6b8]">Desktop downloads for Windows and Apple are coming soon. Your projects and exports are already available in the web app.</p>
+        <div className="mt-14 grid gap-5 md:grid-cols-2">
+          {platforms.map(({ name, detail, icon: Icon }) => (
+            <article key={name} className="rounded-2xl border border-white/10 bg-white/[.025] p-6">
+              <Icon className="size-8 text-violet-300" />
+              <h2 className="mt-8 text-xl font-semibold">{name}</h2>
+              <p className="mt-2 text-sm text-[#9d99ac]">{detail}</p>
+              <span className="mt-7 inline-flex rounded-lg border border-white/10 bg-white/[.04] px-4 py-2.5 text-sm font-medium text-[#c9c4d8]">Coming soon</span>
+            </article>
+          ))}
+        </div>
+      </section>
+      <PublicFooter />
+    </main>
+  );
+}

@@ -27,7 +27,7 @@ function paypalScriptUrl(clientId: string) {
 	return `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD&intent=capture&components=buttons&enable-funding=card&disable-funding=venmo,paylater`;
 }
 
-export function PayPalCheckout({ mode = "upgrade" }: { mode?: "upgrade" | "renew" }) {
+export function PayPalCheckout({ mode = "upgrade", plan = "plus" }: { mode?: "upgrade" | "renew"; plan?: "go" | "plus" }) {
 	const paypalTarget = useRef<HTMLDivElement>(null);
 	const cardTarget = useRef<HTMLDivElement>(null);
 	const [error, setError] = useState("");
@@ -44,7 +44,7 @@ export function PayPalCheckout({ mode = "upgrade" }: { mode?: "upgrade" | "renew
 		const createOrder = async () => {
 			const headers = await authHeaders();
 			const endpoint = mode === "renew" ? "/membership/renew" : "/membership/upgrade";
-			const response = await fetch(`${api}${endpoint}`, { method: "POST", headers, credentials: "include" });
+			const response = await fetch(`${api}${endpoint}`, { method: "POST", headers, credentials: "include", body: JSON.stringify({ plan }) });
 			const payload = await response.json();
 			if (!response.ok) throw new Error(payload.error ?? "Unable to create order.");
 			return payload.data.orderId as string;
@@ -120,7 +120,7 @@ export function PayPalCheckout({ mode = "upgrade" }: { mode?: "upgrade" | "renew
 		return () => {
 			cancelled = true;
 		};
-	}, [mode]);
+	}, [mode, plan]);
 
 	if (error) {
 		return <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</p>;

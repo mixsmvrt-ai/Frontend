@@ -22,6 +22,7 @@ export interface CreditSummary {
 }
 
 export interface MembershipSnapshot {
+  plan: "go" | "plus";
   type: "trial" | "pro" | "expired" | "admin";
   status: "trial_active" | "pro_active" | "expired" | "admin";
   active: boolean;

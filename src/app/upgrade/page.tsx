@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CalendarDays, Check, Lock } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { useViewerAuth } from "@/features/auth/use-viewer-auth";
@@ -8,6 +9,9 @@ import { PayPalCheckout } from "@/features/billing/paypal-checkout";
 import { useMembership } from "@/features/billing/use-membership";
 
 export default function UpgradePage() {
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan") === "go" ? "go" : "plus";
+  const planLabel = plan === "go" ? "Go" : "Plus";
   const { isAuthenticated, authResolved } = useViewerAuth();
   const { membership, error, loading } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
 
@@ -17,7 +21,7 @@ export default function UpgradePage() {
         <header className="grid gap-6 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(168,85,247,.22),_transparent_42%),linear-gradient(145deg,_rgba(15,14,29,.96),_rgba(9,8,22,.98))] p-8 lg:grid-cols-[1.1fr_.9fr]">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">Upgrade</p>
-            <h1 className="mt-3 text-4xl font-black tracking-tight">Restore full creation access with a 30-day Pro Pass.</h1>
+            <h1 className="mt-3 text-4xl font-black tracking-tight">Choose the {planLabel} plan for your studio.</h1>
             <p className="mt-4 max-w-2xl text-[#b9b4c9]">Every account starts with a 7-day full Pro trial. When that trial ends, your studio stays available in read-only mode until you purchase a one-time Pro Pass.</p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-[#d9d4e8]">
               <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">7-day full trial on signup</span>
@@ -47,9 +51,9 @@ export default function UpgradePage() {
           <section className="rounded-2xl border border-violet-400/50 bg-violet-500/10 p-6">
             <p className="text-sm text-violet-200">30-day Pro Pass</p>
             <h2 className="mt-3 text-4xl font-black">{membership?.price ? new Intl.NumberFormat(undefined, { style: "currency", currency: membership.price.currency }).format(membership.price.amountCents / 100) : "Configured in backend"}</h2>
-            <p className="mt-2 text-sm text-[#d9d4e8]">One payment activates {membership?.price?.days ?? 30} days of full access. No subscription. No auto-renewal.</p>
+            <p className="mt-2 text-sm text-[#d9d4e8]">One payment activates {membership?.price?.days ?? 30} days of {planLabel} access. No subscription. No auto-renewal.</p>
             <div className="mt-8">
-              <PayPalCheckout mode="upgrade" />
+              <PayPalCheckout mode="upgrade" plan={plan} />
             </div>
           </section>
         </div>

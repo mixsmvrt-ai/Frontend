@@ -5,25 +5,27 @@ import { PublicNavbar } from "@/components/public-navbar";
 
 const plans = [
   {
-    name: "7-Day Pro Trial",
-    price: "$0",
-    detail: "Full access from day one",
+    name: "Go",
+    price: "$5.99",
+    detail: "The essentials for making ideas quickly",
     features: [
-      "Full text to MIDI, voice to MIDI, and song pack access for 7 days",
-      "1,500 credits available each month while your access is active",
-      "Projects, downloads, billing, and workspace tools included",
+      "Text to MIDI generation",
+      "Projects and MIDI downloads",
+      "Basic support",
     ],
+    href: "/upgrade?plan=go",
   },
   {
-    name: "30-Day Pro Pass",
-    price: "$12",
-    detail: "One-time access extension",
+    name: "Plus",
+    price: "$19.99",
+    detail: "The complete MidiFlow studio",
     features: [
-      "30 days of full creation access with no subscription",
-      "1,500 credits available each month while your pass is active",
-      "Secure PayPal checkout and full workspace access",
+      "Everything in Go",
+      "Voice to MIDI and Song Pack Generator",
+      "Fast support",
     ],
     featured: true,
+    href: "/upgrade?plan=plus",
   },
 ];
 
@@ -34,7 +36,7 @@ export default function PricingPage() {
       <section className="mx-auto max-w-7xl px-5 py-20 text-center lg:px-8">
         <p className="text-sm font-semibold text-violet-300">SIMPLE, FLEXIBLE ACCESS</p>
         <h1 className="mt-4 text-5xl font-bold tracking-[-.05em] sm:text-6xl">Choose your creative pace.</h1>
-        <p className="mx-auto mt-5 max-w-xl text-[#aaa6b8]">Every account starts with a 7-day Pro trial. Active access includes your creation tools plus a shared monthly credit allowance that resets at the end of each month.</p>
+        <p className="mx-auto mt-5 max-w-xl text-[#aaa6b8]">Choose the workspace that fits your creative pace. Upgrade whenever you need more tools and faster support.</p>
         <div className="mx-auto mt-14 grid max-w-4xl gap-5 lg:grid-cols-2">
           {plans.map((plan) => (
             <article key={plan.name} className={`relative rounded-2xl border p-7 text-left ${plan.featured ? "border-violet-400 bg-violet-500/10 shadow-[0_0_50px_rgba(117,70,255,.15)]" : "border-white/10 bg-white/[.025]"}`}>
@@ -42,7 +44,7 @@ export default function PricingPage() {
               <h2 className="text-xl font-semibold">{plan.name}</h2>
               <p className="mt-2 text-sm text-[#aaa6b8]">{plan.detail}</p>
               <p className="mt-7 text-4xl font-bold">{plan.price}{plan.name === "30-Day Pro Pass" ? <span className="ml-1 text-sm font-normal text-[#9995a8]">/30 days</span> : null}</p>
-              <Link href={plan.name === "7-Day Pro Trial" ? "/signup" : "/upgrade"} className={`mt-7 block rounded-xl py-3 text-center text-sm font-semibold ${plan.featured ? "bg-violet-500" : "bg-white/10 hover:bg-white/15"}`}>{plan.name === "7-Day Pro Trial" ? "Start trial" : "Get Pro Pass"}</Link>
+              <Link href={plan.href} className={`mt-7 block rounded-xl py-3 text-center text-sm font-semibold ${plan.featured ? "bg-violet-500" : "bg-white/10 hover:bg-white/15"}`}>Choose {plan.name}</Link>
               <ul className="mt-7 space-y-3">
                 {plan.features.map((feature) => (
                   <li className="flex gap-2 text-sm text-[#ccc8d5]" key={feature}>
@@ -59,15 +61,15 @@ export default function PricingPage() {
           <div className="grid gap-px bg-white/10 sm:grid-cols-3">
             <div className="bg-[#0f0e19] p-6">
               <p className="text-sm font-semibold text-violet-300">Trial</p>
-              <p className="mt-2 text-sm text-[#c9c4d8]">7 days of full Pro features, including 1,500 monthly credits while the trial is active.</p>
+              <p className="mt-2 text-sm text-[#c9c4d8]">Text to MIDI, projects, downloads, and basic support.</p>
             </div>
             <div className="bg-[#0f0e19] p-6">
               <p className="text-sm font-semibold text-violet-300">Expired</p>
-              <p className="mt-2 text-sm text-[#c9c4d8]">Read-only access to your projects, downloads, and billing history.</p>
+              <p className="mt-2 text-sm text-[#c9c4d8]">Voice to MIDI, Song Pack Generator, and fast support.</p>
             </div>
             <div className="bg-[#0f0e19] p-6">
               <p className="text-sm font-semibold text-violet-300">Pro Pass</p>
-              <p className="mt-2 text-sm text-[#c9c4d8]">30 paid days of creation access with 1,500 monthly credits, uploads, and exports.</p>
+              <p className="mt-2 text-sm text-[#c9c4d8]">Both plans include saved projects and MIDI downloads. Plans can be changed as your needs grow.</p>
             </div>
           </div>
         </section>
