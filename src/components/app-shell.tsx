@@ -252,8 +252,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <label className="relative block px-1 pb-3">
-          <Search className="absolute left-4 top-3.5 size-4 text-[#8e89a1]" />
-          <input value={projectQuery} onChange={(event) => setProjectQuery(event.target.value)} className="field pl-10" placeholder="Search projects" />
+          <Search className="absolute right-4 top-3.5 size-4 text-[#8e89a1]" />
+          <input value={projectQuery} onChange={(event) => setProjectQuery(event.target.value)} className="field pr-10" placeholder="Search projects" />
         </label>
 
         <div className="space-y-1">
