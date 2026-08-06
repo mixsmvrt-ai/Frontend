@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-
-const geistSans = Geist({
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
@@ -28,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className="antialiased">
         {children}<Toaster richColors theme="dark" position="bottom-right" />
       </body>
     </html>

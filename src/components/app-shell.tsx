@@ -350,7 +350,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <button
             type="button"
+            onClick={() => setWorkspaceMenuOpen((open) => !open)}
             aria-label="Open workspace menu"
+            aria-expanded={workspaceMenuOpen}
             className="grid size-12 place-items-center rounded-full border border-white/10 bg-[#171427] text-[#d7d2e2] shadow-[0_18px_40px_rgba(6,6,14,0.45)] transition hover:scale-[1.02] hover:bg-[#1d1a31] focus:outline-none focus:ring-2 focus:ring-violet-400/70"
           >
             <Settings className="size-5" />

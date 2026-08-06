@@ -100,7 +100,7 @@ export default function ProjectsPage() {
       </header>
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <label className="relative block min-w-[260px] flex-1 max-w-xl">
+        <label className="relative block min-w-0 w-full max-w-xl flex-1 sm:min-w-[260px]">
           <Search className="absolute left-3 top-3.5 size-4 text-[#8f8a9d]" />
           <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pl-10" placeholder="Search projects" />
         </label>

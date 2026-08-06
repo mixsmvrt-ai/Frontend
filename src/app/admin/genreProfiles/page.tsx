@@ -298,7 +298,7 @@ export default function GenreProfilesAdminPage() {
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
           <section>
             <div className="flex flex-wrap gap-3">
-              <label className="relative block min-w-[260px] flex-1">
+              <label className="relative block min-w-0 w-full flex-1 sm:min-w-[260px]">
                 <Search className="absolute left-3 top-3.5 size-4 text-[#938e9f]" />
                 <input className="field pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search genre profiles" />
               </label>
