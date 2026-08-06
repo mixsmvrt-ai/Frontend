@@ -11,8 +11,13 @@ export interface GenerationRecord {
 	generation_requests?: { prompt: string; kind: string; settings?: Record<string, unknown> } | null;
 	generation_files?: Array<{ id: string; file_name: string; mime_type: string; storage_path: string }>;
 }
-const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-export async function generateMusic(input: GenerateInput): Promise<GenerationResult> { const response = await fetch(`${baseUrl}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(input) }); const payload = await response.json().catch(() => ({})); if (!response.ok) throw new Error(payload.error ?? "Unable to generate MIDI."); return payload.data as GenerationResult; }
+export async function generateMusic(input: GenerateInput): Promise<GenerationResult> {
+	const response = await apiRequest<{ data: GenerationResult }>("/generate", {
+		method: "POST",
+		body: JSON.stringify(input),
+	});
+	return response.data;
+}
 
 export async function readGeneration(generationId: string) {
 	const response = await apiRequest<{ data: GenerationRecord }>(`/generations/${encodeURIComponent(generationId)}`);
