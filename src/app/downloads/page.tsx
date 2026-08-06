@@ -76,8 +76,8 @@ export default function DownloadsPage() {
       </header>
 
       <label className="relative mt-8 block max-w-xl">
-        <Search className="absolute left-3 top-3.5 size-4 text-[#8f8a9d]" />
-        <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pl-10" placeholder="Search downloads" />
+        <Search className="absolute right-3 top-3.5 size-4 text-[#8f8a9d]" />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pr-10" placeholder="Search downloads" />
       </label>
 
       {error ? <p className="mt-8 text-red-200">{error}</p> : null}

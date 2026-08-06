@@ -306,8 +306,8 @@ export default function ArtistProfilesAdminPage() {
           <section>
             <div className="flex flex-wrap gap-3">
               <label className="relative block min-w-0 w-full flex-1 sm:min-w-[260px]">
-                <Search className="absolute left-3 top-3.5 size-4 text-[#938e9f]" />
-                <input className="field pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search artist profiles" />
+                <Search className="absolute right-3 top-3.5 size-4 text-[#938e9f]" />
+                <input className="field pr-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search artist profiles" />
               </label>
               <select value={filter} onChange={(event) => setFilter(event.target.value as "all" | "active" | "inactive")} className="field max-w-[180px]">
                 <option value="all">All</option>

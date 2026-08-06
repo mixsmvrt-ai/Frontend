@@ -101,8 +101,8 @@ export default function ProjectsPage() {
 
       <div className="mt-8 flex flex-wrap gap-3">
         <label className="relative block min-w-0 w-full max-w-xl flex-1 sm:min-w-[260px]">
-          <Search className="absolute left-3 top-3.5 size-4 text-[#8f8a9d]" />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pl-10" placeholder="Search projects" />
+          <Search className="absolute right-3 top-3.5 size-4 text-[#8f8a9d]" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pr-10" placeholder="Search projects" />
         </label>
         <select value={sort} onChange={(event) => setSort(event.target.value as "updated_at" | "created_at")} className="field max-w-[180px]">
           <option value="updated_at">Recently updated</option>

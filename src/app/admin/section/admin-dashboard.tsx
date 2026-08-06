@@ -781,8 +781,8 @@ export default function AdminDashboardPage() {
             </div>
             <div className="flex items-center gap-3">
               <label className="relative hidden w-72 md:block">
-                <Search className="absolute left-3 top-3 size-4 text-[#938e9f]" />
-                <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pl-9" placeholder={`Search ${activeTab.label.toLowerCase()}`} />
+                <Search className="absolute right-3 top-3 size-4 text-[#938e9f]" />
+                <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pr-9" placeholder={`Search ${activeTab.label.toLowerCase()}`} />
               </label>
               <div className="rounded-2xl border border-white/10 bg-white/[.04] px-4 py-2 text-right text-sm">
                 <p className="font-semibold text-white">{userEmail || "Administrator"}</p>
@@ -834,8 +834,8 @@ export default function AdminDashboardPage() {
           </div>
 
           <label className="relative mt-5 block md:hidden">
-            <Search className="absolute left-3 top-3 size-4 text-[#938e9f]" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pl-9" placeholder={`Search ${activeTab.label.toLowerCase()}`} />
+            <Search className="absolute right-3 top-3 size-4 text-[#938e9f]" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} className="field pr-9" placeholder={`Search ${activeTab.label.toLowerCase()}`} />
           </label>
 
           {error ? <p className="mt-6 rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</p> : null}

@@ -39,8 +39,8 @@ export default function KnowledgePage() {
       </header>
 
       <label className="relative mt-8 block max-w-2xl">
-        <Search className="absolute left-3 top-3.5 size-4 text-[#918c9e]" />
-        <input className="field pl-10" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ask: best chord progression for Drill" />
+        <Search className="absolute right-3 top-3.5 size-4 text-[#918c9e]" />
+        <input className="field pr-10" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ask: best chord progression for Drill" />
       </label>
 
       <div className="mt-4 flex flex-wrap gap-2">
