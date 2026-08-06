@@ -307,17 +307,6 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
             >
               <Plus className={`size-5 transition-transform ${settingsOpen ? "rotate-45" : "rotate-0"}`} />
             </motion.button>
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <span className="truncate rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-100">
-                {kind}
-              </span>
-              <span className="truncate rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-100">
-                {key} {scale}
-              </span>
-              <span className="truncate rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-100">
-                {tempo} BPM
-              </span>
-            </div>
           </div>
           <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={generate} disabled={busy || creditsExhausted} aria-label="Generate MIDI" className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-[0_0_25px_rgba(119,75,255,.65)] disabled:opacity-60">
             <ArrowUp className="size-5" />
