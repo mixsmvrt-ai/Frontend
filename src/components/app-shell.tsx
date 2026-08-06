@@ -305,7 +305,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div ref={workspaceMenuRef} className="pointer-events-none absolute bottom-4 right-4 z-20 md:hidden">
-        <div className={`pointer-events-auto absolute bottom-16 right-0 max-h-[calc(100dvh-6rem)] w-[min(320px,calc(100vw-2rem))] origin-bottom-right overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-2 scale-95 opacity-0"}`}>
+        <div className={`pointer-events-none fixed inset-0 z-[60] flex items-center justify-center p-4 transition duration-200 ${workspaceMenuOpen ? "opacity-100" : "opacity-0"}`}>
+          <div className={`pointer-events-auto max-h-[calc(100dvh-2rem)] w-[min(360px,calc(100vw-2rem))] origin-center overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100" : "translate-y-2 scale-95"}`}>
           <WorkspaceMenu
             isAuthenticated={isAuthenticated}
             membership={membership}
@@ -319,6 +320,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               setMobileOpen(false);
             }}
           />
+          </div>
         </div>
 
         <button
@@ -355,7 +357,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {sidebar}
 
         <div ref={desktopWorkspaceMenuRef} className="absolute bottom-4 right-4 hidden md:block">
-          <div className={`absolute bottom-16 right-0 z-30 max-h-[calc(100dvh-6rem)] w-[min(320px,calc(100vw-2rem))] origin-bottom-right overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}>
+          <div className={`pointer-events-none fixed inset-0 z-[60] flex items-center justify-center p-4 transition duration-200 ${workspaceMenuOpen ? "opacity-100" : "opacity-0"}`}>
+            <div className={`pointer-events-auto max-h-[calc(100dvh-2rem)] w-[min(400px,calc(100vw-2rem))] origin-center overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100" : "translate-y-2 scale-95"}`}>
             <WorkspaceMenu
               isAuthenticated={isAuthenticated}
               membership={membership}
@@ -366,6 +369,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               isBottomActive={isBottomActive}
               onNavigate={() => setMobileOpen(false)}
             />
+            </div>
           </div>
 
           <button
