@@ -4,10 +4,10 @@ import {
   ArrowUp,
   FileMusic,
   History,
-  Loader2,
   Mic,
   Music4,
   SlidersHorizontal,
+  Trash2,
   Waves,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -162,6 +162,7 @@ export default function VoiceToMidiPage() {
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const holdShouldStopRef = useRef(true);
   const pressedRef = useRef(false);
+  const discardRecordingRef = useRef(false);
 
   const creditLabel = useMemo(() => {
     if (membership?.credits) return `${membership.credits.balance} Credits`;
@@ -344,6 +345,10 @@ export default function VoiceToMidiPage() {
     const stream = streamRef.current;
     if (!recorder || !stream) return;
     try {
+      if (discardRecordingRef.current) {
+        discardRecordingRef.current = false;
+        return;
+      }
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
       const wavFile = await recordedBlobToWavFile(blob);
       const nextPreviewUrl = URL.createObjectURL(wavFile);
@@ -420,6 +425,20 @@ export default function VoiceToMidiPage() {
     mediaRecorderRef.current.stop();
   }, []);
 
+  const discardRecording = () => {
+    if (recording) {
+      discardRecordingRef.current = true;
+      stopRecording();
+      return;
+    }
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setFile(null);
+    setStatusLabel("Waiting");
+    setRecordingSeconds(0);
+    setError("");
+  };
+
   const handleRecordPointerDown = async (event: React.PointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
     if (busy) return;
@@ -477,6 +496,7 @@ export default function VoiceToMidiPage() {
     setError("");
     setInterpretation(null);
     setDownloadUrl(null);
+    setConversation((current) => [...current, { role: "user", content: `Voice recording: ${file.name}` }]);
 
     try {
       setStatusLabel("Record or upload");
@@ -521,6 +541,8 @@ export default function VoiceToMidiPage() {
 
       setDownloadUrl(generation.midiFileUrl);
       setStatusLabel("Ready");
+      setConversation((current) => [...current, { role: "assistant", content: `I converted your recording into a MIDI idea at ${generation.tempo} BPM.`, fileName: generation.fileName }]);
+      discardRecording();
       toast.success("Voice-to-MIDI pipeline completed.");
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "Voice-to-MIDI failed.";
@@ -564,19 +586,19 @@ export default function VoiceToMidiPage() {
           <div className="flex items-center gap-2"><button type="button" className="hidden items-center gap-2 rounded-lg border border-white/[.1] px-3 py-2 text-xs text-[#d6d2df] sm:flex"><History className="size-3.5" />History</button><button type="button" aria-label="Voice settings" className="grid size-9 place-items-center rounded-lg border border-white/[.1] text-[#aaa8b8]"><SlidersHorizontal className="size-4" /></button></div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-10">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 pb-36 md:px-10">
           <div className="mx-auto max-w-3xl space-y-7">
             {!conversation.length && !file ? <div className="flex min-h-[34vh] flex-col items-center justify-center text-center"><div className="grid size-16 place-items-center rounded-2xl bg-violet-500/10 text-violet-300"><Mic className="size-8" /></div><h2 className="mt-5 text-3xl font-bold text-white">What are you hearing?</h2><p className="mt-2 max-w-md text-sm leading-6 text-[#a7a5b4]">Describe a melody or use the microphone below. I&apos;ll turn your idea into clean, editable MIDI.</p></div> : null}
             {conversation.map((message, index) => message.role === "user" ? <div key={`${message.role}-${index}`} className="flex justify-end"><div className="max-w-[82%] rounded-2xl rounded-br-md bg-[#211e3a] px-4 py-3 text-sm leading-6 text-[#f0edf7]">{message.content}</div></div> : <div key={`${message.role}-${index}`} className="flex items-start gap-3"><div className="grid size-9 shrink-0 place-items-center rounded-full border border-violet-400/30 bg-violet-500/10 text-violet-300"><Music4 className="size-4" /></div><div className="min-w-0 max-w-[88%]"><div className="mb-2 flex items-center gap-2 text-xs text-[#8f8c9c]"><span className="font-semibold text-[#c9c5d3]">MidiFlow AI</span><span>{statusLabel === "Ready" ? "Just now" : "Working"}</span></div><div className="rounded-2xl rounded-tl-md border border-white/[.08] bg-[#151821] p-4 text-sm leading-6 text-[#e5e2eb]"><p>{message.content}</p>{message.fileName ? <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/[.08] bg-[#10121a] p-3"><div className="grid size-10 place-items-center rounded-lg bg-violet-500/15 text-violet-300"><FileMusic className="size-5" /></div><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-white">{message.fileName}</p><p className="text-[11px] text-[#8e8b9a]">MIDI file · {voiceCost} credits</p></div>{downloadUrl ? <a href={downloadUrl} target="_blank" rel="noreferrer" className="grid size-8 place-items-center rounded-full border border-white/[.1] text-violet-300" aria-label="Download MIDI"><ArrowUp className="size-4 rotate-45" /></a> : null}</div> : null}</div></div></div>)}
-            {busy ? <div className="flex items-center gap-3 text-sm text-[#9793a4]"><Loader2 className="size-4 animate-spin text-violet-300" />Working on your MIDI idea...</div> : null}
+            {busy ? <div className="flex items-start gap-3"><div className="grid size-9 shrink-0 place-items-center rounded-full border border-violet-400/30 bg-violet-500/10 text-violet-300"><Music4 className="size-4" /></div><div className="rounded-2xl rounded-tl-md border border-white/[.08] bg-[#151821] px-4 py-3"><div className="flex items-center gap-1.5" aria-label="MidiFlow AI is processing"><span className="size-2 animate-bounce rounded-full bg-violet-300" /><span className="size-2 animate-bounce rounded-full bg-violet-300 [animation-delay:150ms]" /><span className="size-2 animate-bounce rounded-full bg-violet-300 [animation-delay:300ms]" /></div></div></div> : null}
             {file ? <div className="rounded-xl border border-white/[.08] bg-[#151821] p-3 text-xs text-[#bdb9c8]">Audio ready: <span className="text-white">{file.name}</span><span className="ml-2 text-violet-300">{recording ? `Recording ${formatTimer(recordingSeconds)}` : statusLabel}</span></div> : null}
             {interpretation ? <div className="rounded-xl border border-white/[.08] bg-[#151821] p-4 text-sm text-[#d6d1df]"><p className="font-semibold text-white">Detected idea</p><p className="mt-2 text-xs leading-5 text-[#a5a1b0]">{interpretation.interpretation.musicalSummary.concise}</p><p className="mt-3 text-xs text-violet-300">{interpretation.interpretation.genreConfidence[0]?.genre ?? "Contemporary"} · {interpretation.interpretation.emotion.primary} · {interpretation.interpretation.keyAnalysis.currentKey ?? "Auto key"}</p></div> : null}
             {error ? <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</p> : null}
           </div>
         </div>
 
-        <div className="border-t border-white/[.08] px-4 pb-4 pt-3 md:px-10">
-          <div className="mx-auto max-w-3xl"><div className="rounded-2xl border border-white/[.12] bg-[#11141d] p-3 shadow-[0_12px_40px_rgba(0,0,0,.22)]"><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendPrompt(); } }} rows={2} className="w-full resize-none bg-transparent px-2 text-sm leading-6 text-white outline-none placeholder:text-[#898694]" placeholder="Describe the melody you want or use your voice..." /><div className="flex items-center justify-between gap-3"><label className="grid size-9 cursor-pointer place-items-center rounded-full border border-white/[.1] text-[#aaa6b5] transition hover:bg-white/[.06]" aria-label="Upload audio"><PlusIcon /><input type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={(event) => { const nextFile = event.target.files?.[0] ?? null; if (nextFile) { setFile(nextFile); setPreviewUrl(URL.createObjectURL(nextFile)); setStatusLabel("Ready"); } }} /></label><button type="button" onPointerDown={!prompt && !file ? (event) => void handleRecordPointerDown(event) : undefined} onPointerMove={!prompt && !file ? handleRecordPointerMove : undefined} onPointerUp={!prompt && !file ? handleRecordPointerUp : undefined} onPointerCancel={!prompt && !file ? handleRecordPointerCancel : undefined} onClick={prompt ? () => void sendPrompt() : file ? () => void runPipeline() : undefined} disabled={busy} aria-label={prompt ? "Send message" : file ? "Generate MIDI from audio" : "Record voice"} className={`grid size-12 shrink-0 place-items-center rounded-full text-white shadow-[0_0_25px_rgba(139,92,246,.45)] transition ${prompt ? "bg-violet-500 hover:bg-violet-400" : "bg-violet-600 hover:bg-violet-500"}`}>{prompt ? <ArrowUp className="size-5" /> : <Mic className="size-5" />}</button></div></div><p className="mt-2 text-center text-[11px] text-[#777482]">{isAuthenticated && creditResetLabel ? `${creditLabel} · ${voiceCost} credits per Voice-to-MIDI run` : "You can speak or type. I&apos;ll handle the rest."}</p></div>
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[.08] bg-[#0b0d14]/95 px-4 pb-4 pt-3 backdrop-blur-xl md:left-80 md:px-10">
+          <div className="mx-auto max-w-3xl"><div className="rounded-2xl border border-white/[.12] bg-[#11141d] p-3 shadow-[0_12px_40px_rgba(0,0,0,.22)]"><div className={`mb-2 flex items-center gap-2 px-2 text-xs ${recording ? "text-violet-200" : "text-[#777482]"}`} aria-live="polite">{recording ? <><span className="size-2 animate-pulse rounded-full bg-red-400" />Recording {formatTimer(recordingSeconds)}</> : file ? <><FileMusic className="size-3.5 text-violet-300" />Recording ready to send</> : null}</div><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendPrompt(); } }} disabled={recording || busy} rows={2} className="w-full resize-none bg-transparent px-2 text-sm leading-6 text-white outline-none placeholder:text-[#898694] disabled:cursor-default" placeholder={recording ? "Keep holding... release to stop recording" : "Describe the melody you want or use your voice..."} /><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2">{recording || file ? <button type="button" onClick={discardRecording} disabled={busy} aria-label="Delete recording" className="grid size-9 place-items-center rounded-full border border-red-400/30 text-red-300 transition hover:bg-red-500/10 disabled:opacity-50"><Trash2 className="size-4" /></button> : <label className="grid size-9 cursor-pointer place-items-center rounded-full border border-white/[.1] text-[#aaa6b5] transition hover:bg-white/[.06]" aria-label="Upload audio"><PlusIcon /><input type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={(event) => { const nextFile = event.target.files?.[0] ?? null; if (nextFile) { setFile(nextFile); setPreviewUrl(URL.createObjectURL(nextFile)); setStatusLabel("Ready"); } }} /></label>}</div><button type="button" onPointerDown={!prompt && !file && !recording ? (event) => void handleRecordPointerDown(event) : undefined} onPointerMove={!prompt && !file && recording ? handleRecordPointerMove : undefined} onPointerUp={!prompt && !file && recording ? handleRecordPointerUp : undefined} onPointerCancel={!prompt && !file && recording ? handleRecordPointerCancel : undefined} onClick={prompt ? () => void sendPrompt() : file ? () => void runPipeline() : undefined} disabled={busy} aria-label={prompt ? "Send message" : file ? "Send recording" : "Record voice"} className={`grid size-12 shrink-0 place-items-center rounded-full text-white shadow-[0_0_25px_rgba(139,92,246,.45)] transition ${prompt || file ? "bg-violet-500 hover:bg-violet-400" : "bg-violet-600 hover:bg-violet-500"}`}>{prompt || file ? <ArrowUp className="size-5" /> : <Mic className="size-5" />}</button></div></div><p className="mt-2 text-center text-[11px] text-[#777482]">{isAuthenticated && creditResetLabel ? `${creditLabel} · ${voiceCost} credits per Voice-to-MIDI run` : "You can speak or type. I&apos;ll handle the rest."}</p></div>
         </div>
       </section>
     </AppShell>

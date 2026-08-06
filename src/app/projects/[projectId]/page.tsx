@@ -466,7 +466,7 @@ export default function ProjectPage() {
       ) : null}
         </div>
 
-        <div className="sticky bottom-0 bg-[#090816]/80 py-5 backdrop-blur">
+        <div className="pb-32">
           <GenerationComposer compact projectId={projectId} onGenerated={() => void loadMessages()} onReplyStateChange={setComposerReply} onSubmitPrompt={submitProjectPrompt} />
         </div>
       </section>

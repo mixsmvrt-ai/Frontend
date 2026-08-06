@@ -220,7 +220,7 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
   };
 
   return (
-    <section className={`w-full ${compact ? "" : "mx-auto max-w-[780px]"}`}>
+    <section className={`fixed bottom-0 left-0 right-0 z-30 w-full border-t border-white/[.08] bg-[#090816]/95 px-4 py-3 backdrop-blur-xl md:left-80 md:px-8 ${compact ? "" : ""}`}>
       <div ref={composerRef} className="relative rounded-2xl border border-violet-500/80 bg-[#0e0e1d]/90 p-3 shadow-[0_0_40px_rgba(104,58,255,.10)]">
         <textarea
           value={prompt}
