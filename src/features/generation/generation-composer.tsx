@@ -56,7 +56,8 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
   const [localReplyState, setLocalReplyState] = useState<ComposerReplyState | null>(null);
   const processingTimerRef = useRef<number | null>(null);
   const textCredits = membership?.credits;
-  const creditsExhausted = Boolean(isAuthenticated && textCredits && textCredits.balance < textCredits.textToMidiCost);
+  const creditsExhausted = Boolean(isAuthenticated && textCredits && textCredits.textBalance < textCredits.textToMidiCost);
+  const textCreditsLow = Boolean(textCredits && textCredits.textUsagePercent >= 80 && !creditsExhausted);
 
   useEffect(() => () => {
     if (processingTimerRef.current) {
@@ -308,6 +309,7 @@ export function GenerationComposer({ compact = false, projectId, onGenerated, on
               <Plus className={`size-5 transition-transform ${settingsOpen ? "rotate-45" : "rotate-0"}`} />
             </motion.button>
           </div>
+          {textCreditsLow ? <p className="mb-2 text-right text-xs text-amber-200">Text-to-MIDI credits are {Math.round(textCredits?.textUsagePercent ?? 0)}% used.</p> : null}
           <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={generate} disabled={busy || creditsExhausted} aria-label="Generate MIDI" className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-[0_0_25px_rgba(119,75,255,.65)] disabled:opacity-60">
             <ArrowUp className="size-5" />
           </motion.button>

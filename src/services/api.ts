@@ -11,6 +11,9 @@ export interface CreditSummary {
   balance: number;
   used: number;
   usagePercent: number;
+  textBalance: number;
+  textUsed: number;
+  textUsagePercent: number;
   resetsOn: string;
   textToMidiCost: number;
   voiceToMidiCost: number;
@@ -53,8 +56,9 @@ export class MembershipExpiredError extends Error {
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
 export async function authHeaders({ redirectOnMissingUser = true }: { redirectOnMissingUser?: boolean } = {}) {
-  const result = await supabase?.auth.getUser();
-  const user = result?.data.user;
+  const sessionResult = await supabase?.auth.getSession();
+  const session = sessionResult?.data.session;
+  const user = session?.user;
   if (!user) {
     if (redirectOnMissingUser && typeof window !== "undefined") {
       const next = window.location.pathname + window.location.search;
@@ -65,6 +69,7 @@ export async function authHeaders({ redirectOnMissingUser = true }: { redirectOn
   return {
     "Content-Type": "application/json",
     "x-user-id": user.id,
+    ...(session.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
   };
 }
 
