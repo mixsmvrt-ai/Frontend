@@ -109,6 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [authResolved, setAuthResolved] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const workspaceMenuRef = useRef<HTMLDivElement>(null);
+  const desktopWorkspaceMenuRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const suppressProjectClickRef = useRef(false);
   const { membership } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
@@ -161,7 +162,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const closeMenu = (event: MouseEvent) => {
       if (!menuRef.current?.contains(event.target as Node)) setMenuId(null);
-      if (!workspaceMenuRef.current?.contains(event.target as Node)) setWorkspaceMenuOpen(false);
+      if (!workspaceMenuRef.current?.contains(event.target as Node) && !desktopWorkspaceMenuRef.current?.contains(event.target as Node)) setWorkspaceMenuOpen(false);
     };
     document.addEventListener("mousedown", closeMenu);
     return () => document.removeEventListener("mousedown", closeMenu);
@@ -353,7 +354,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className={`fixed inset-y-0 left-0 z-50 flex w-[290px] shrink-0 flex-col border-r border-white/10 bg-[#0c0b18] transition-transform md:sticky md:top-0 md:z-20 md:h-screen md:w-80 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         {sidebar}
 
-        <div className="absolute bottom-4 right-4 hidden md:block">
+        <div ref={desktopWorkspaceMenuRef} className="absolute bottom-4 right-4 hidden md:block">
           <div className={`absolute bottom-16 right-0 z-30 max-h-[calc(100dvh-6rem)] w-[min(320px,calc(100vw-2rem))] origin-bottom-right overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}>
             <WorkspaceMenu
               isAuthenticated={isAuthenticated}
