@@ -9,7 +9,7 @@ import { promptSignIn, useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { projectsApi, type ProjectRecord } from "@/services/projects";
 
 export default function ProjectsPage() {
-  const { isAuthenticated } = useViewerAuth();
+  const { isAuthenticated, authResolved } = useViewerAuth();
   const [items, setItems] = useState<ProjectRecord[]>([]);
   const [trashed, setTrashed] = useState<ProjectRecord[]>([]);
   const [query, setQuery] = useState("");
@@ -19,7 +19,16 @@ export default function ProjectsPage() {
   const [view, setView] = useState<"active" | "trash">("active");
 
   useEffect(() => {
+    if (!authResolved) return;
+    if (!isAuthenticated) {
+      setItems([]);
+      setTrashed([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
+    setError("");
     Promise.all([projectsApi.list(query, sort), projectsApi.trashed()])
       .then(([active, removed]) => {
         setItems(active.data);
@@ -27,7 +36,7 @@ export default function ProjectsPage() {
       })
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Unable to load projects."))
       .finally(() => setLoading(false));
-  }, [query, sort]);
+  }, [authResolved, isAuthenticated, query, sort]);
 
   const visible = useMemo(() => (view === "active" ? items : trashed), [items, trashed, view]);
 
