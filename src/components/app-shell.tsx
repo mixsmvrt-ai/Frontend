@@ -102,6 +102,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectQuery, setProjectQuery] = useState("");
+  const [projectSearchOpen, setProjectSearchOpen] = useState(false);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
@@ -111,6 +113,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const menuRef = useRef<HTMLDivElement>(null);
   const workspaceMenuRef = useRef<HTMLDivElement>(null);
   const desktopWorkspaceMenuRef = useRef<HTMLDivElement>(null);
+  const projectSearchRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const suppressProjectClickRef = useRef(false);
   const { membership } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
@@ -192,6 +195,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [mobileOpen]);
 
+  useEffect(() => {
+    if (projectSearchOpen) projectSearchRef.current?.focus();
+  }, [projectSearchOpen]);
+
   const projectAction = async (action: "rename" | "duplicate" | "archive" | "delete", project: Project) => {
     try {
       if (action === "rename") {
@@ -225,7 +232,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const projectList = projects;
+  const projectList = projectQuery.trim()
+    ? projects.filter((project) => project.title.toLowerCase().includes(projectQuery.trim().toLowerCase()))
+    : projects;
 
   const showAdminLink = Boolean(isAuthenticated && membership?.isAdmin);
   const showPlanPricing = pathname === "/";
@@ -239,9 +248,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span>MidiFlow</span>
         </Link>
         <div className="flex items-center gap-2">
-          <Link href="/projects" onClick={() => setMobileOpen(false)} className="grid size-11 place-items-center rounded-full border border-white/10 bg-white/[.04] text-white transition hover:bg-white/[.08]" aria-label="Search projects">
-            <Search className="size-5" />
-          </Link>
+          {projectSearchOpen ? (
+            <label className="flex h-11 w-[min(190px,52vw)] items-center gap-2 rounded-full border border-white/10 bg-white/[.06] px-3 text-white focus-within:border-violet-400/70">
+              <Search className="size-4 shrink-0 text-[#9b97a9]" />
+              <input ref={projectSearchRef} value={projectQuery} onChange={(event) => setProjectQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#898595]" placeholder="Search projects" aria-label="Search projects" />
+              <button type="button" onClick={() => { setProjectQuery(""); setProjectSearchOpen(false); }} className="grid size-6 shrink-0 place-items-center rounded-full text-[#aaa6b7] hover:bg-white/10 hover:text-white" aria-label="Close project search">
+                <X className="size-3.5" />
+              </button>
+            </label>
+          ) : (
+            <button type="button" onClick={() => setProjectSearchOpen(true)} className="grid size-11 place-items-center rounded-full border border-white/10 bg-white/[.04] text-white transition hover:bg-white/[.08]" aria-label="Search projects">
+              <Search className="size-5" />
+            </button>
+          )}
           <button type="button" onClick={() => setMobileOpen(false)} className="grid size-11 place-items-center rounded-full bg-white/5 text-[#cfc9dd] md:hidden" aria-label="Close sidebar">
             <X className="size-4" />
           </button>
