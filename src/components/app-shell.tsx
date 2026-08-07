@@ -363,7 +363,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               membership={membership}
               showAdminLink={showAdminLink}
               onSubscription={() => setSubscriptionOpen(true)}
-              onNavigate={() => setMobileOpen(false)}
+              onNavigate={() => {
+                setWorkspaceMenuOpen(false);
+                setMobileOpen(false);
+              }}
             />
             </div>
           </div>

@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Bell, BookOpen, Check, HelpCircle, LogOut, Shield, Sparkles, Settings, UserRound, Volume2, X } from "lucide-react";
+import { ArrowLeft, Bell, BookOpen, Check, HelpCircle, Loader2, LogOut, Shield, Sparkles, Settings, UserRound, Volume2, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { MembershipSnapshot } from "@/services/api";
+import { accountApi, type AccountProfileResponse } from "@/services/account";
 
 type SettingsSheetProps = {
   isAuthenticated: boolean;
@@ -21,7 +23,49 @@ function SheetLink({ label, href, icon: Icon, onNavigate }: { label: string; hre
   </Link>;
 }
 
+function SheetButton({ label, icon: Icon, onClick }: { label: string; icon: LucideIcon; onClick: () => void }) {
+  return <button type="button" onClick={onClick} className="flex w-full items-center gap-4 border-b border-white/[.1] px-4 py-4 text-left text-[15px] font-semibold text-[#f2f2f4] transition last:border-0 hover:bg-white/[.06]">
+    <Icon className="size-5 shrink-0 text-[#f5f5f7]" />
+    <span className="min-w-0 flex-1">{label}</span>
+    <span className="text-2xl leading-none text-[#6f7078]">›</span>
+  </button>;
+}
+
+type PanelName = "account" | "general" | "notifications" | "parental" | "safety" | "security" | "storage" | "data" | "ads" | "support";
+
+function PanelView({ panel, profile, loading }: { panel: PanelName; profile: AccountProfileResponse | null; loading: boolean }) {
+  const titles: Record<PanelName, string> = {
+    account: "My account",
+    general: "General",
+    notifications: "Notifications",
+    parental: "Parental controls",
+    safety: "Safety",
+    security: "Security and login",
+    storage: "Storage",
+    data: "Data controls",
+    ads: "Ads controls",
+    support: "Support center",
+  };
+
+  if (loading) return <div className="flex items-center gap-3 rounded-2xl bg-white/[.04] p-5 text-sm text-[#b5b5bd]"><Loader2 className="size-4 animate-spin" />Loading {titles[panel].toLowerCase()}...</div>;
+
+  if (panel === "account") return <div className="space-y-3"><InfoRow label="Display name" value={profile?.display_name ?? "Not set"} /><InfoRow label="Email" value={profile?.email ?? "Available after sign in"} /><InfoRow label="Member since" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "Not available"} /></div>;
+  if (panel === "general") return <div className="space-y-3"><InfoRow label="Default BPM" value={String(profile?.preferences.default_bpm ?? 120)} /><InfoRow label="Default key" value={profile?.preferences.default_key ?? "Not set"} /><InfoRow label="Default genre" value={profile?.preferences.default_genre ?? "Not set"} /><InfoRow label="Preferred DAW" value={profile?.preferences.daw_preference ?? "Not set"} /></div>;
+  if (panel === "notifications") return <div className="space-y-3">{Object.entries(profile?.preferences.notification_settings ?? { productUpdates: true, billing: true, support: true }).map(([key, enabled]) => <InfoRow key={key} label={key === "productUpdates" ? "Product updates" : key[0].toUpperCase() + key.slice(1)} value={enabled ? "On" : "Off"} />)}</div>;
+  if (panel === "storage") return <div className="space-y-3"><InfoRow label="Autosave" value={profile?.preferences.auto_save ? "Enabled" : "Disabled"} /><InfoRow label="Autosave interval" value={`${profile?.preferences.autosave_interval_seconds ?? 60} seconds`} /><InfoRow label="Downloads" value="Your exported MIDI files are available in Downloads." /></div>;
+  if (panel === "support") return <div className="space-y-4"><p className="text-sm leading-6 text-[#b5b5bd]">Get help with MIDI generation, projects, billing, or account access.</p><Link href="/support" className="block rounded-xl bg-violet-500 px-4 py-3 text-center text-sm font-bold">Open support center</Link></div>;
+  const descriptions: Record<Exclude<PanelName, "account" | "general" | "notifications" | "storage" | "support">, string> = { parental: "Manage family and shared access settings when available.", safety: "MidiFlow keeps generation and account actions protected by server-side access controls.", security: "Your sign-in and account security are managed through your authenticated session.", data: "Your projects, prompts, downloads, and preferences remain attached to your account.", ads: "MidiFlow currently does not use advertising controls in the workspace." };
+  return <p className="rounded-2xl bg-white/[.04] p-5 text-sm leading-6 text-[#b5b5bd]">{descriptions[panel as keyof typeof descriptions]}</p>;
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return <div className="flex items-center justify-between gap-4 rounded-2xl bg-white/[.04] px-4 py-3 text-sm"><span className="text-[#a9a9b0]">{label}</span><span className="max-w-[60%] truncate text-right font-semibold text-white">{value}</span></div>;
+}
+
 export function SettingsSheet({ isAuthenticated, membership, showAdminLink, onSubscription, onNavigate }: SettingsSheetProps) {
+  const [activePanel, setActivePanel] = useState<PanelName | null>(null);
+  const [profile, setProfile] = useState<AccountProfileResponse | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const accountStatus = !isAuthenticated
     ? "Sign in to sync your workspace"
     : membership?.type === "trial"
@@ -30,38 +74,55 @@ export function SettingsSheet({ isAuthenticated, membership, showAdminLink, onSu
         ? `${membership.daysRemaining} days of ${membership.plan === "go" ? "Go" : "Plus"} remaining`
         : membership?.type === "expired" ? "Read-only access" : "Administrator access";
 
-  return <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[34px] border border-white/[.08] bg-[#1c1c1e] px-4 py-5 text-white shadow-[0_28px_100px_rgba(0,0,0,.65)]">
+  const openPanel = async (panel: PanelName) => {
+    setActivePanel(panel);
+    if (!isAuthenticated || profile) return;
+    setProfileLoading(true);
+    try {
+      const response = await accountApi.profile();
+      setProfile(response.data);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  if (activePanel) return <div className="scrollbar-hidden max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[34px] border border-white/[.08] bg-[#1c1c1e] px-4 py-5 text-white shadow-[0_28px_100px_rgba(0,0,0,.65)]">
+    <div className="flex items-center gap-3 px-3 pb-6"><button type="button" onClick={() => setActivePanel(null)} className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[.04]" aria-label="Back to settings"><ArrowLeft className="size-5" /></button><h2 className="text-xl font-bold">{({ account: "My account", general: "General", notifications: "Notifications", parental: "Parental controls", safety: "Safety", security: "Security and login", storage: "Storage", data: "Data controls", ads: "Ads controls", support: "Support center" } as Record<PanelName, string>)[activePanel]}</h2></div>
+    <PanelView panel={activePanel} profile={profile} loading={profileLoading} />
+  </div>;
+
+  return <div className="scrollbar-hidden max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[34px] border border-white/[.08] bg-[#1c1c1e] px-4 py-5 text-white shadow-[0_28px_100px_rgba(0,0,0,.65)]">
     <div className="flex items-center justify-between px-3 pb-5">
       <div><p className="text-xl font-bold">Settings</p><p className="mt-1 text-xs text-[#9b9ba2]">Your MidiFlow workspace</p></div>
       <button type="button" onClick={onNavigate} className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[.04] text-2xl text-white" aria-label="Close settings"><X className="size-5" /></button>
     </div>
 
     <div className="overflow-hidden rounded-[28px] bg-[#2b2b2d]">
-      <Link href={isAuthenticated ? "/profile" : "/login?next=%2Fcreate"} onClick={onNavigate} className="flex items-center gap-4 border-b border-white/[.1] px-4 py-5">
+      <button type="button" onClick={() => void openPanel("account")} className="flex w-full items-center gap-4 border-b border-white/[.1] px-4 py-5 text-left">
         <span className="grid size-12 place-items-center rounded-full bg-violet-500 text-lg font-bold">{isAuthenticated ? "MF" : <UserRound className="size-5" />}</span>
         <span className="min-w-0 flex-1"><span className="block truncate text-base font-bold">{isAuthenticated ? "My account" : "Sign in"}</span><span className="mt-1 block truncate text-xs text-[#a9a9b0]">{accountStatus}</span></span><span className="text-2xl text-[#77777e]">›</span>
-      </Link>
+      </button>
       <button type="button" onClick={onSubscription} className="flex w-full items-center gap-4 border-b border-white/[.1] px-4 py-4 text-left transition hover:bg-white/[.06]"><Sparkles className="size-5 text-sky-300" /><span className="min-w-0 flex-1"><span className="block text-[15px] font-semibold">Subscription</span><span className="mt-1 block text-xs text-[#a9a9b0]">{membership?.type === "pro" ? `${membership.plan === "go" ? "Go" : "Plus"} active` : "Choose a plan"}</span></span><span className="text-2xl text-[#77777e]">›</span></button>
     </div>
 
     <p className="px-3 pb-2 pt-7 text-lg font-bold text-[#a9a9ad]">Customize MidiFlow</p>
     <div className="overflow-hidden rounded-[28px] bg-[#2b2b2d]">
-      <SheetLink label="General" href="/settings" icon={Settings} onNavigate={onNavigate} />
-      <SheetLink label="Notifications" href="/settings" icon={Bell} onNavigate={onNavigate} />
+      <SheetButton label="General" icon={Settings} onClick={() => void openPanel("general")} />
+      <SheetButton label="Notifications" icon={Bell} onClick={() => void openPanel("notifications")} />
       <SheetLink label="Voice to MIDI" href="/voice-to-midi" icon={Volume2} onNavigate={onNavigate} />
-      <SheetLink label="Parental controls" href="/profile" icon={UserRound} onNavigate={onNavigate} />
-      <SheetLink label="Safety" href="/support" icon={Shield} onNavigate={onNavigate} />
-      <SheetLink label="Security and login" href="/profile" icon={Shield} onNavigate={onNavigate} />
-      <SheetLink label="Storage" href="/downloads" icon={BookOpen} onNavigate={onNavigate} />
-      <SheetLink label="Data controls" href="/settings" icon={UserRound} onNavigate={onNavigate} />
-      <SheetLink label="Ads controls" href="/settings" icon={Sparkles} onNavigate={onNavigate} />
+      <SheetButton label="Parental controls" icon={UserRound} onClick={() => void openPanel("parental")} />
+      <SheetButton label="Safety" icon={Shield} onClick={() => void openPanel("safety")} />
+      <SheetButton label="Security and login" icon={Shield} onClick={() => void openPanel("security")} />
+      <SheetButton label="Storage" icon={BookOpen} onClick={() => void openPanel("storage")} />
+      <SheetButton label="Data controls" icon={UserRound} onClick={() => void openPanel("data")} />
+      <SheetButton label="Ads controls" icon={Sparkles} onClick={() => void openPanel("ads")} />
       {showAdminLink ? <SheetLink label="Admin operations" href="/admin" icon={Shield} onNavigate={onNavigate} /> : null}
     </div>
 
     <p className="px-3 pb-2 pt-7 text-lg font-bold text-[#a9a9ad]">Get help</p>
     <div className="overflow-hidden rounded-[28px] bg-[#2b2b2d]">
-      <SheetLink label="Support center" href="/support" icon={HelpCircle} onNavigate={onNavigate} />
-      <SheetLink label="Pricing and plans" href="/pricing" icon={Sparkles} onNavigate={onNavigate} />
+      <SheetButton label="Support center" icon={HelpCircle} onClick={() => void openPanel("support")} />
+      <button type="button" onClick={onSubscription} className="flex w-full items-center gap-4 border-b border-white/[.1] px-4 py-4 text-left text-[15px] font-semibold text-[#f2f2f4] transition last:border-0 hover:bg-white/[.06]"><Sparkles className="size-5" /><span className="min-w-0 flex-1">Pricing and plans</span><span className="text-2xl leading-none text-[#6f7078]">›</span></button>
     </div>
 
     {isAuthenticated ? <Link href="/logout" onClick={onNavigate} className="mt-7 flex items-center gap-4 rounded-[28px] bg-[#2b2b2d] px-4 py-5 text-[15px] font-semibold text-red-400"><LogOut className="size-5" />Log out</Link> : null}
@@ -76,7 +137,7 @@ export function SubscriptionDialog({ membership, onClose }: { membership: Member
   ];
 
   return <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Subscription plans">
-    <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-[32px] border border-white/10 bg-[#111113] p-6 shadow-[0_30px_100px_rgba(0,0,0,.7)] sm:p-8">
+    <div className="scrollbar-hidden relative max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-[32px] border border-white/10 bg-[#111113] p-6 shadow-[0_30px_100px_rgba(0,0,0,.7)] sm:p-8">
       <button type="button" onClick={onClose} className="absolute right-5 top-5 grid size-10 place-items-center rounded-full border border-white/10 text-white" aria-label="Close subscription dialog"><X className="size-5" /></button>
       <div className="pr-12"><p className="text-sm font-bold uppercase tracking-[.16em] text-sky-300">Subscription</p><h2 className="mt-3 text-3xl font-black">Choose your creative pace.</h2><p className="mt-2 max-w-lg text-sm leading-6 text-[#aaaab1]">Plans use the secure checkout already configured for your MidiFlow account.</p></div>
       <div className="mt-7 grid gap-4 sm:grid-cols-2">
