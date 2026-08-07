@@ -88,7 +88,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" | "rese
   const isSignup = mode === "signup";
 
   return (
-    <main className="relative grid min-h-screen place-items-center overflow-hidden bg-[#070713] px-5 py-10">
+    <main className="relative grid min-h-screen place-items-center overflow-hidden bg-black px-5 py-10">
       <div aria-hidden="true" className="absolute -left-32 top-12 size-96 rounded-full bg-violet-600/15 blur-3xl" />
       <div aria-hidden="true" className="absolute -bottom-20 right-0 size-80 rounded-full bg-fuchsia-500/10 blur-3xl" />
       <form onSubmit={submit} className={`glass relative w-full rounded-3xl border border-white/10 p-7 shadow-2xl shadow-violet-950/30 sm:p-9 ${isSignup ? "max-w-2xl" : "max-w-md"}`}>

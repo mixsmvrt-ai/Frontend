@@ -281,7 +281,7 @@ export default function ArtistProfilesAdminPage() {
   }
 
   return (
-    <main className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#090816] p-5 text-white md:p-8">
+    <main className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-black p-5 text-white md:p-8">
       <header className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
         <Link href="/admin/music-brain" className="font-black text-violet-200">MidiFlow</Link>
         <span className="rounded-full bg-fuchsia-400/15 px-3 py-1 text-xs font-bold text-fuchsia-200">ARTIST PROFILES</span>

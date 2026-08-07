@@ -80,7 +80,7 @@ export default function SupportPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(244,114,182,.14),_transparent_28%),linear-gradient(180deg,_#070713,_#0a0916_35%,_#05050b)]">
+    <main className="min-h-screen bg-black">
       <PublicNavbar />
       <section className="mx-auto max-w-6xl px-5 py-20 lg:px-8">
         <p className="text-sm font-semibold tracking-[.22em] text-fuchsia-300">SUPPORT</p>

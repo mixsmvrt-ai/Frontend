@@ -31,7 +31,7 @@ const plans = [
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-[#070713]">
+    <main className="min-h-screen bg-black">
       <PublicNavbar />
       <section className="mx-auto max-w-7xl px-5 py-20 text-center lg:px-8">
         <p className="text-sm font-semibold text-violet-300">SIMPLE, FLEXIBLE ACCESS</p>

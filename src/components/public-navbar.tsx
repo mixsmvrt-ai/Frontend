@@ -27,7 +27,7 @@ export function PublicNavbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b transition ${scrolled ? "border-white/10 bg-[#070713]/85 backdrop-blur-xl" : "border-white/[.055] bg-[#070713]/70 backdrop-blur-md"}`}
+      className={`sticky top-0 z-50 border-b transition ${scrolled ? "border-white/10 bg-black/85 backdrop-blur-xl" : "border-white/[.055] bg-black/70 backdrop-blur-md"}`}
     >
     <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
       <Link

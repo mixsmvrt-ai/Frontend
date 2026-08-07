@@ -9,7 +9,7 @@ const platforms = [
 
 export default function DownloadPage() {
   return (
-    <main className="min-h-screen bg-[#070713]">
+    <main className="min-h-screen bg-black">
       <PublicNavbar />
       <section className="mx-auto max-w-6xl px-5 py-20 lg:px-8">
         <p className="text-sm font-semibold text-violet-300">DESKTOP APP</p>

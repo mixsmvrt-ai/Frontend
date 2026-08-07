@@ -336,8 +336,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-[#090816] text-white md:flex">
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-[#090816]/95 px-4 py-3 backdrop-blur md:hidden">
+    <div className="min-h-screen bg-black text-white md:flex">
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-black/95 px-4 py-3 backdrop-blur md:hidden">
         <button type="button" onClick={() => setMobileOpen(true)} className="grid size-10 place-items-center rounded-xl bg-white/[.06]" aria-label="Open sidebar">
           <Menu className="size-5" />
         </button>

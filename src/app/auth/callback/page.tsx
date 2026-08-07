@@ -26,5 +26,5 @@ export default function AuthCallbackPage() {
     });
   }, [router]);
 
-  return <main className="grid min-h-screen place-items-center bg-[#070713] p-5"><section className="glass max-w-md rounded-2xl p-8 text-center"><h1 className="text-2xl font-black">MidiFlow authentication</h1><p className="mt-3 text-[#aaa3bd]">{message}</p><Link href="/dashboard" className="mt-6 inline-block text-violet-200">Open workspace</Link></section></main>;
+  return <main className="grid min-h-screen place-items-center bg-black p-5"><section className="glass max-w-md rounded-2xl p-8 text-center"><h1 className="text-2xl font-black">MidiFlow authentication</h1><p className="mt-3 text-[#aaa3bd]">{message}</p><Link href="/dashboard" className="mt-6 inline-block text-violet-200">Open workspace</Link></section></main>;
 }
