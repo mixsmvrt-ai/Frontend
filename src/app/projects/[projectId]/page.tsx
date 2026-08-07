@@ -288,7 +288,7 @@ export default function ProjectPage() {
       const result = await projectsApi.createMessage(projectId, {
         content: input.prompt,
         generation: {
-          kind: input.kind,
+          ...(input.kind ? { kind: input.kind } : {}),
           key: input.key,
           scale: input.scale,
           tempo: input.tempo,

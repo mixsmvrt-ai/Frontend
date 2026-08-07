@@ -29,10 +29,10 @@ export interface ComposerReplyState {
 
 export interface ComposerSubmitInput {
   prompt: string;
-  kind: "melody" | "chords" | "counter_melody" | "bassline" | "drums" | "full_composition";
-  key: string;
-  scale: "major" | "minor";
-  tempo: number;
+  kind?: "melody" | "chords" | "counter_melody" | "bassline" | "drums" | "full_composition";
+  key?: string;
+  scale?: "major" | "minor";
+  tempo?: number;
 }
 
 function projectTitleFromPrompt(value: string) {
@@ -47,10 +47,10 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
   const { membership, refresh } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
   const composerRef = useRef<HTMLDivElement | null>(null);
   const [prompt, setPrompt] = useState("");
-  const [kind, setKind] = useState("Melody");
-  const [key, setKey] = useState("A");
-  const [scale, setScale] = useState("Minor");
-  const [tempo, setTempo] = useState("140");
+  const [kind, setKind] = useState("");
+  const [key, setKey] = useState("");
+  const [scale, setScale] = useState("");
+  const [tempo, setTempo] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [localReplyState, setLocalReplyState] = useState<ComposerReplyState | null>(null);
@@ -115,10 +115,12 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
   const generate = async () => {
     const generationPrompt = prompt.trim();
     if (generationPrompt.length < 3) return toast.error("Describe at least a few notes or a musical feeling.");
-    const parsedTempo = Number(tempo);
-    if (!Number.isInteger(parsedTempo) || parsedTempo < 40 || parsedTempo > 240) {
+    const parsedTempo = tempo.trim() ? Number(tempo) : undefined;
+    if (parsedTempo !== undefined && (!Number.isInteger(parsedTempo) || parsedTempo < 40 || parsedTempo > 240)) {
       return toast.error("BPM must be a whole number between 40 and 240.");
     }
+    const selectedKind = kind ? kind.toLowerCase().replaceAll(" ", "_") as ComposerSubmitInput["kind"] : undefined;
+    const selectedScale = scale ? scale.toLowerCase() as ComposerSubmitInput["scale"] : undefined;
 
     if (!isAuthenticated) {
       toast("Sign in to create a project", {
@@ -135,16 +137,14 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
           title: projectTitleFromPrompt(generationPrompt),
           description: generationPrompt,
           tags: [],
-          bpm: parsedTempo,
-          musicalKey: `${key} ${scale}`,
+          ...(parsedTempo !== undefined ? { bpm: parsedTempo } : {}),
+          ...(key ? { musicalKey: `${key}${selectedScale ? ` ${selectedScale}` : ""}` } : {}),
         });
-        const query = new URLSearchParams({
-          prompt: generationPrompt,
-          kind: kind.toLowerCase().replaceAll(" ", "_"),
-          key,
-          scale: scale.toLowerCase(),
-          tempo: String(parsedTempo),
-        });
+        const query = new URLSearchParams({ prompt: generationPrompt });
+        if (selectedKind) query.set("kind", selectedKind);
+        if (key) query.set("key", key);
+        if (selectedScale) query.set("scale", selectedScale);
+        if (parsedTempo !== undefined) query.set("tempo", String(parsedTempo));
         setPrompt("");
         router.push(`/projects/${project.data.id}?${query.toString()}`);
       } catch (error) {
@@ -183,9 +183,9 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
         clearProcessingTimer();
         await onSubmitPrompt({
           prompt: generationPrompt,
-          kind: kind.toLowerCase().replaceAll(" ", "_") as ComposerSubmitInput["kind"],
-          key,
-          scale: scale.toLowerCase() as ComposerSubmitInput["scale"],
+          kind: selectedKind,
+          key: key || undefined,
+          scale: selectedScale,
           tempo: parsedTempo,
         });
         setPrompt("");
@@ -199,8 +199,8 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
           title: projectTitleFromPrompt(generationPrompt),
           description: generationPrompt,
           tags: [],
-          bpm: parsedTempo,
-          musicalKey: `${key} ${scale}`,
+          ...(parsedTempo !== undefined ? { bpm: parsedTempo } : {}),
+          ...(key ? { musicalKey: `${key}${selectedScale ? ` ${selectedScale}` : ""}` } : {}),
         });
         activeProjectId = project.data.id;
       }
@@ -262,6 +262,7 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
             </div>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
               <select value={kind} onChange={(event) => setKind(event.target.value)} aria-label="Generation type" className="rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
+                <option value="">Let prompt decide type</option>
                 <option>Melody</option>
                 <option>Chords</option>
                 <option>Counter Melody</option>
@@ -270,9 +271,11 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
                 <option>Full Composition</option>
               </select>
               <select value={key} onChange={(event) => setKey(event.target.value)} aria-label="Musical key" className="rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
+                <option value="">Auto key from prompt/style</option>
                 {keys.map((note) => <option key={note} value={note}>{note}</option>)}
               </select>
               <select value={scale} onChange={(event) => setScale(event.target.value)} aria-label="Major or minor scale" className="rounded-xl border border-white/[.06] bg-[#181827] px-3 py-2.5 text-sm text-[#dfdeeb]">
+                <option value="">Auto scale from prompt/style</option>
                 <option>Minor</option>
                 <option>Major</option>
               </select>
@@ -286,7 +289,8 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
                   inputMode="numeric"
                   onChange={(event) => setTempo(event.target.value)}
                   aria-label="Tempo in BPM"
-                  className="w-full bg-transparent text-sm text-[#dfdeeb] outline-none"
+                  placeholder="Auto BPM"
+                  className="w-full bg-transparent text-sm text-[#dfdeeb] outline-none placeholder:text-[#9894aa]"
                 />
                 <span className="ml-2 text-xs text-[#a8a6b8]">BPM</span>
               </label>

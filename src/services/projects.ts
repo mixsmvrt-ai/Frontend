@@ -42,5 +42,5 @@ export const projectsApi = {
 	remove: (id: string) => request<void>(`/projects/${encodeURIComponent(id)}`, { method: "DELETE" }),
 	duplicate: (id: string) => request<{ data: { id: string } }>(`/projects/${encodeURIComponent(id)}/duplicate`, { method: "POST" }),
 	messages: (id: string) => request<{ data: ProjectMessage[] }>(`/projects/${encodeURIComponent(id)}/messages`),
-	createMessage: (id: string, input: { content: string; generation?: { kind: "melody" | "chords" | "counter_melody" | "bassline" | "drums" | "full_composition"; key?: string; scale?: "major" | "minor"; tempo?: number; lengthBars?: number; complexity?: "low" | "medium" | "high"; variationAmount?: number; timeSignature?: [number, number] } }) => request<{ data: ProjectConversationResult }>(`/projects/${encodeURIComponent(id)}/messages`, { method: "POST", body: JSON.stringify(input) }),
+	createMessage: (id: string, input: { content: string; generation?: { kind?: "melody" | "chords" | "counter_melody" | "bassline" | "drums" | "full_composition"; key?: string; scale?: "major" | "minor"; tempo?: number; lengthBars?: number; complexity?: "low" | "medium" | "high"; variationAmount?: number; timeSignature?: [number, number] } }) => request<{ data: ProjectConversationResult }>(`/projects/${encodeURIComponent(id)}/messages`, { method: "POST", body: JSON.stringify(input) }),
 };
