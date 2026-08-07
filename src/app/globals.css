@@ -46,6 +46,64 @@ button { cursor: pointer; }
 .scrollbar-hidden { scrollbar-width: none; -ms-overflow-style: none; }
 .scrollbar-hidden::-webkit-scrollbar { display: none; }
 
+/* WhatsApp-style visual state for the press-and-hold voice composer. */
+textarea[placeholder*="Keep holding"],
+textarea[placeholder*="Recording locked"] {
+  min-height: 3rem;
+  border: 1px solid rgba(167, 139, 250, .45);
+  border-radius: .85rem;
+  background: rgba(0, 0, 0, .22);
+  color: #ede9fe;
+  text-align: center;
+  padding-top: .75rem;
+  padding-bottom: .75rem;
+}
+
+textarea[placeholder*="Keep holding"] ~ div,
+textarea[placeholder*="Recording locked"] ~ div {
+  position: relative;
+}
+
+textarea[placeholder*="Keep holding"] ~ div::before {
+  content: "↑  Swipe up to lock";
+  position: absolute;
+  right: 3.5rem;
+  bottom: 100%;
+  margin-bottom: .55rem;
+  color: #ddd6fe;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  animation: voice-lock-hint 1.2s ease-in-out infinite;
+}
+
+textarea[placeholder*="Keep holding"] ~ div button[aria-label="Record voice"],
+textarea[placeholder*="Recording locked"] ~ div button[aria-label="Record voice"] {
+  position: relative;
+  background: #dc2626;
+  box-shadow: 0 0 28px rgba(239, 68, 68, .4);
+}
+
+textarea[placeholder*="Recording locked"] ~ div button[aria-label="Record voice"]::after {
+  content: "LOCKED";
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + .55rem);
+  border-radius: 999px;
+  background: #7f1d1d;
+  padding: .25rem .5rem;
+  color: #fee2e2;
+  font-size: .55rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+@keyframes voice-lock-hint {
+  0%, 100% { transform: translateY(.2rem); opacity: .65; }
+  50% { transform: translateY(-.2rem); opacity: 1; }
+}
+
 [data-admin-shell] .bg-violet-600,
 [data-admin-shell] .bg-violet-600\/90 { background-color: #a7e2d9 !important; color: #12151a !important; }
 [data-admin-shell] .bg-violet-500\/10,
