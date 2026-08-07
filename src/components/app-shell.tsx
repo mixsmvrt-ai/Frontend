@@ -5,13 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Archive, AudioLines, Copy, Download, Ellipsis, LogOut, Menu, Mic2, Package2, Plus, Search, Settings, Shield, Sparkles, Trash2, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
+import { SettingsSheet, SubscriptionDialog } from "@/components/settings-sheet";
 import { useMembership } from "@/features/billing/use-membership";
 import { supabase } from "@/lib/supabase/browser";
 import { projectsApi } from "@/services/projects";
 
 type Project = { id: string; title: string; updated_at: string };
 
-const bottomLinks = [
+export const bottomLinks = [
   { label: "Downloads", href: "/download", icon: Download },
   { label: "Pricing", href: "/pricing", icon: Sparkles },
   { label: "Settings", href: "/settings", icon: Settings },
@@ -34,7 +35,7 @@ function sidebarLinkClass(active: boolean) {
     : "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#aeb3bd] transition hover:bg-white/[.05] hover:text-white";
 }
 
-function WorkspaceMenu({
+export function WorkspaceMenu({
   isAuthenticated,
   membership,
   pricingHref,
@@ -101,10 +102,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [projectQuery, setProjectQuery] = useState("");
   const [menuId, setMenuId] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authResolved, setAuthResolved] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -147,12 +148,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const result = await projectsApi.list(projectQuery, "updated_at");
+      const result = await projectsApi.list("", "updated_at");
       setProjects(result.data as Project[]);
     } catch {
       setProjects([]);
     }
-  }, [isAuthenticated, projectQuery]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!authResolved) return;
@@ -224,26 +225,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const projectList = projectQuery.trim()
-    ? projects.filter((project) => project.title.toLowerCase().includes(projectQuery.trim().toLowerCase()))
-    : projects;
+  const projectList = projects;
 
-  const isBottomActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const showAdminLink = Boolean(isAuthenticated && membership?.isAdmin);
   const showPlanPricing = pathname === "/";
   const pricingHref = "/pricing";
-  const workspaceLinks = isAuthenticated ? [...bottomLinks, { label: "Referrals", href: "/referrals", icon: Sparkles }] : bottomLinks;
 
   const sidebar = (
     <>
-      <div className="flex items-center justify-between px-4 py-4">
-        <Link href="/dashboard" className="flex items-center gap-2.5 text-lg font-black tracking-tight" onClick={() => setMobileOpen(false)}>
+      <div className="flex items-center justify-between px-5 py-5">
+        <Link href="/dashboard" className="flex items-center gap-2.5 text-xl font-black tracking-tight" onClick={() => setMobileOpen(false)}>
           <AudioLines className="size-6 text-fuchsia-500" />
           <span>MidiFlow</span>
         </Link>
-        <button type="button" onClick={() => setMobileOpen(false)} className="grid size-9 place-items-center rounded-lg bg-white/5 text-[#cfc9dd] md:hidden" aria-label="Close sidebar">
-          <X className="size-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/projects" onClick={() => setMobileOpen(false)} className="grid size-11 place-items-center rounded-full border border-white/10 bg-white/[.04] text-white transition hover:bg-white/[.08]" aria-label="Search projects">
+            <Search className="size-5" />
+          </Link>
+          <button type="button" onClick={() => setMobileOpen(false)} className="grid size-11 place-items-center rounded-full bg-white/5 text-[#cfc9dd] md:hidden" aria-label="Close sidebar">
+            <X className="size-4" />
+          </button>
+        </div>
       </div>
 
       <div className="px-3 pb-3">
@@ -270,11 +272,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <p className="text-[11px] font-bold uppercase tracking-[.14em] text-[#817d91]">Projects</p>
           <Link href="/projects" onClick={() => setMobileOpen(false)} className="text-xs font-semibold text-violet-300">Open all</Link>
         </div>
-
-        <label className="relative block px-1 pb-3">
-          <Search className="absolute right-4 top-3.5 size-4 text-[#8e89a1]" />
-          <input value={projectQuery} onChange={(event) => setProjectQuery(event.target.value)} className="field pr-10" placeholder="Search projects" />
-        </label>
 
         <div className="space-y-1">
           {projectList.map((project) => (
@@ -304,17 +301,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <div ref={workspaceMenuRef} className="pointer-events-none absolute bottom-4 right-4 z-20 md:hidden">
+      <div ref={workspaceMenuRef} className="pointer-events-none absolute bottom-4 left-4 right-4 z-20 md:hidden">
         <div className={`pointer-events-none fixed inset-0 z-[60] flex items-center justify-center p-4 transition duration-200 ${workspaceMenuOpen ? "opacity-100" : "opacity-0"}`}>
           <div className={`${workspaceMenuOpen ? "pointer-events-auto" : "pointer-events-none"} max-h-[calc(100dvh-2rem)] w-[min(360px,calc(100vw-2rem))] origin-center overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100" : "translate-y-2 scale-95"}`}>
-          <WorkspaceMenu
+          <SettingsSheet
             isAuthenticated={isAuthenticated}
             membership={membership}
-            pricingHref={pricingHref}
             showAdminLink={showAdminLink}
-            showPlanPricing={showPlanPricing}
-            workspaceLinks={workspaceLinks}
-            isBottomActive={isBottomActive}
+            onSubscription={() => setSubscriptionOpen(true)}
             onNavigate={() => {
               setWorkspaceMenuOpen(false);
               setMobileOpen(false);
@@ -323,15 +317,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setWorkspaceMenuOpen((open) => !open)}
-          aria-label="Open workspace menu"
-          aria-expanded={workspaceMenuOpen}
-          className="pointer-events-auto grid size-12 place-items-center rounded-full border border-white/10 bg-[#171427] text-[#d7d2e2] shadow-[0_18px_40px_rgba(6,6,14,0.45)] transition hover:scale-[1.02] hover:bg-[#1d1a31] focus:outline-none focus:ring-2 focus:ring-violet-400/70"
-        >
-          <Settings className="size-5" />
-        </button>
+        <div className="flex items-center justify-between">
+          <Link href="/" onClick={() => setMobileOpen(false)} className="pointer-events-auto grid size-12 place-items-center rounded-full bg-violet-600 text-white shadow-[0_18px_40px_rgba(91,33,182,0.38)] transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300/70" aria-label="New text to MIDI chat">
+            <Plus className="size-5" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setWorkspaceMenuOpen((open) => !open)}
+            aria-label="Open workspace menu"
+            aria-expanded={workspaceMenuOpen}
+            className="pointer-events-auto grid size-12 place-items-center rounded-full border border-white/10 bg-[#171427] text-[#d7d2e2] shadow-[0_18px_40px_rgba(6,6,14,0.45)] transition hover:scale-[1.02] hover:bg-[#1d1a31] focus:outline-none focus:ring-2 focus:ring-violet-400/70"
+          >
+            <Settings className="size-5" />
+          </button>
+        </div>
       </div>
     </>
   );
@@ -353,36 +352,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {mobileOpen ? <button type="button" className="fixed inset-0 z-40 bg-black/60 md:hidden" aria-label="Close sidebar overlay" onClick={() => setMobileOpen(false)} /> : null}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-[290px] shrink-0 flex-col border-r border-white/10 bg-[#0c0b18] transition-transform md:sticky md:top-0 md:z-20 md:h-screen md:w-80 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex w-[290px] shrink-0 flex-col border-r border-white/10 bg-black transition-transform md:sticky md:top-0 md:z-20 md:h-screen md:w-80 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         {sidebar}
 
-        <div ref={desktopWorkspaceMenuRef} className="absolute bottom-4 right-4 hidden md:block">
+        <div ref={desktopWorkspaceMenuRef} className="absolute bottom-4 left-4 right-4 hidden md:block">
           <div className={`pointer-events-none fixed inset-0 z-[60] flex items-center justify-center p-4 transition duration-200 ${workspaceMenuOpen ? "opacity-100" : "opacity-0"}`}>
             <div className={`${workspaceMenuOpen ? "pointer-events-auto" : "pointer-events-none"} max-h-[calc(100dvh-2rem)] w-[min(400px,calc(100vw-2rem))] origin-center overflow-y-auto transition duration-200 ${workspaceMenuOpen ? "translate-y-0 scale-100" : "translate-y-2 scale-95"}`}>
-            <WorkspaceMenu
+            <SettingsSheet
               isAuthenticated={isAuthenticated}
               membership={membership}
-              pricingHref={pricingHref}
               showAdminLink={showAdminLink}
-              showPlanPricing={showPlanPricing}
-              workspaceLinks={workspaceLinks}
-              isBottomActive={isBottomActive}
+              onSubscription={() => setSubscriptionOpen(true)}
               onNavigate={() => setMobileOpen(false)}
             />
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setWorkspaceMenuOpen((open) => !open)}
-            aria-label="Open workspace menu"
-            aria-expanded={workspaceMenuOpen}
-            className="grid size-12 place-items-center rounded-full border border-white/10 bg-[#171427] text-[#d7d2e2] shadow-[0_18px_40px_rgba(6,6,14,0.45)] transition hover:scale-[1.02] hover:bg-[#1d1a31] focus:outline-none focus:ring-2 focus:ring-violet-400/70"
-          >
-            <Settings className="size-5" />
-          </button>
+          <div className="flex items-center justify-between">
+            <Link href="/" onClick={() => setMobileOpen(false)} className="grid size-12 place-items-center rounded-full bg-violet-600 text-white shadow-[0_18px_40px_rgba(91,33,182,0.38)] transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300/70" aria-label="New text to MIDI chat">
+              <Plus className="size-5" />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setWorkspaceMenuOpen((open) => !open)}
+              aria-label="Open workspace menu"
+              aria-expanded={workspaceMenuOpen}
+              className="grid size-12 place-items-center rounded-full border border-white/10 bg-[#171427] text-[#d7d2e2] shadow-[0_18px_40px_rgba(6,6,14,0.45)] transition hover:scale-[1.02] hover:bg-[#1d1a31] focus:outline-none focus:ring-2 focus:ring-violet-400/70"
+            >
+              <Settings className="size-5" />
+            </button>
+          </div>
         </div>
       </aside>
+
+      {subscriptionOpen ? <SubscriptionDialog membership={membership} onClose={() => setSubscriptionOpen(false)} /> : null}
 
       <main className="min-w-0 flex-1 overflow-x-hidden md:h-[100dvh] md:overflow-y-auto">
         <div className="p-5 md:p-8">{children}</div>

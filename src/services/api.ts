@@ -39,6 +39,7 @@ export interface MembershipSnapshot {
   daysRemaining: number;
   trialDaysRemaining: number;
   price?: PlanPrice;
+  prices?: { go: PlanPrice; plus: PlanPrice };
   credits?: CreditSummary;
 }
 
