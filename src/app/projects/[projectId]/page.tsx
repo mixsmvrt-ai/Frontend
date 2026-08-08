@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Bot, Check, CircleDashed, Download, Heart, Loader2, Music2, Pencil, RefreshCcw, Sparkles, UserRound, X } from "lucide-react";
+import { ArrowDown, Bot, Check, CircleDashed, Download, Heart, Loader2, Music2, Pencil, RefreshCcw, Sparkles, UserRound, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -58,7 +58,20 @@ export default function ProjectPage() {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [editingBusy, setEditingBusy] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const initialPromptSubmittedRef = useRef(false);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const element = messagesRef.current;
+    if (!element) return;
+    const updateScrollState = () => setShowScrollToBottom(element.scrollHeight - element.scrollTop - element.clientHeight > 80);
+    updateScrollState();
+    element.addEventListener("scroll", updateScrollState, { passive: true });
+    return () => element.removeEventListener("scroll", updateScrollState);
+  }, [messages.length, composerReply, assistantTyping]);
+
+  const scrollToLatest = () => messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "smooth" });
 
   const loadMessages = useCallback(async () => {
     try {
@@ -351,7 +364,7 @@ export default function ProjectPage() {
   return (
     <AppShell>
       <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl flex-col">
-        <div className="scrollbar-hidden flex-1 space-y-5 overflow-y-auto px-1 py-5 md:px-4 md:py-7">
+        <div ref={messagesRef} className="scrollbar-hidden flex-1 space-y-5 overflow-y-auto px-1 py-5 pb-40 md:px-4 md:py-7 md:pb-44">
           {loading ? <div className="h-20 animate-pulse rounded-2xl bg-white/5" /> : null}
           {messages.map((message) => {
             const isUser = message.role === "user";
@@ -466,6 +479,8 @@ export default function ProjectPage() {
       </article>
       ) : null}
         </div>
+
+        {showScrollToBottom ? <button type="button" onClick={scrollToLatest} title="Jump to latest message" aria-label="Jump to latest message" className="fixed bottom-28 left-1/2 z-40 grid size-10 -translate-x-1/2 place-items-center rounded-full border border-white/15 bg-[#171427]/95 text-white shadow-[0_12px_35px_rgba(0,0,0,.45)] backdrop-blur transition hover:bg-violet-600 md:bottom-32"><ArrowDown className="size-4" /></button> : null}
 
         <div className="pb-32">
           <GenerationComposer projectId={projectId} onGenerated={() => void loadMessages()} onReplyStateChange={setComposerReply} onSubmitPrompt={submitProjectPrompt} />

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Download, Loader2, Music4, RefreshCcw, Sparkles } from "lucide-react";
+import { ArrowDown, Download, Loader2, Music4, RefreshCcw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -81,6 +81,20 @@ export default function SongPackGeneratorPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
+  useEffect(() => {
+    const updateScrollState = () => setShowScrollToBottom(document.documentElement.scrollHeight - window.scrollY - window.innerHeight > 120);
+    updateScrollState();
+    window.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    return () => {
+      window.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [activePack]);
+
+  const scrollToLatest = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
 
   useEffect(() => {
     if (!supabase) {
@@ -239,7 +253,7 @@ export default function SongPackGeneratorPage() {
 
   return (
     <AppShell>
-      <section className="mx-auto max-w-6xl">
+      <section className="mx-auto max-w-6xl pb-24">
         <header className="grid gap-6 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,.22),_transparent_42%),linear-gradient(145deg,_rgba(15,14,29,.96),_rgba(9,8,22,.98))] p-8 lg:grid-cols-[1.1fr_.9fr]">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">Pro Workspace</p>
@@ -332,6 +346,7 @@ export default function SongPackGeneratorPage() {
           </section>
         ) : null}
       </section>
+      {showScrollToBottom ? <button type="button" onClick={scrollToLatest} title="Jump to latest content" aria-label="Jump to latest content" className="fixed bottom-6 right-6 z-40 grid size-11 place-items-center rounded-full border border-white/15 bg-[#171427]/95 text-white shadow-[0_12px_35px_rgba(0,0,0,.45)] backdrop-blur transition hover:bg-violet-600"><ArrowDown className="size-4" /></button> : null}
     </AppShell>
   );
 }

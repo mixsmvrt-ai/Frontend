@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowDown,
   ArrowUp,
   FileMusic,
   History,
@@ -165,6 +166,19 @@ export default function VoiceToMidiPage() {
   const holdShouldStopRef = useRef(true);
   const pressedRef = useRef(false);
   const discardRecordingRef = useRef(false);
+  const voiceScrollRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
+  useEffect(() => {
+    const element = voiceScrollRef.current;
+    if (!element) return;
+    const updateScrollState = () => setShowScrollToBottom(element.scrollHeight - element.scrollTop - element.clientHeight > 80);
+    updateScrollState();
+    element.addEventListener("scroll", updateScrollState, { passive: true });
+    return () => element.removeEventListener("scroll", updateScrollState);
+  }, [conversation.length, busy, interpretation, file]);
+
+  const scrollToLatest = () => voiceScrollRef.current?.scrollTo({ top: voiceScrollRef.current.scrollHeight, behavior: "smooth" });
 
   const creditLabel = useMemo(() => {
     if (membership?.credits) return `${membership.credits.balance} Credits`;
@@ -589,7 +603,7 @@ export default function VoiceToMidiPage() {
           <div className="flex items-center gap-2"><button type="button" className="hidden items-center gap-2 rounded-lg border border-white/[.1] px-3 py-2 text-xs text-[#d6d2df] sm:flex"><History className="size-3.5" />History</button><button type="button" aria-label="Voice settings" className="grid size-9 place-items-center rounded-lg border border-white/[.1] text-[#aaa8b8]"><SlidersHorizontal className="size-4" /></button></div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 pb-36 md:px-10">
+        <div ref={voiceScrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-6 pb-44 md:px-10 md:pb-48">
           <div className="mx-auto max-w-3xl space-y-7">
             {!conversation.length && !file ? <div className="flex min-h-[34vh] flex-col items-center justify-center text-center"><div className="grid size-16 place-items-center rounded-2xl bg-violet-500/10 text-violet-300"><Mic className="size-8" /></div><h2 className="mt-5 text-3xl font-bold text-white">What are you hearing?</h2><p className="mt-2 max-w-md text-sm leading-6 text-[#a7a5b4]">Describe a melody or use the microphone below. I&apos;ll turn your idea into clean, editable MIDI.</p></div> : null}
             {conversation.map((message, index) => message.role === "user" ? <div key={`${message.role}-${index}`} className="flex justify-end">{message.audioUrl ? <VoiceMessage src={message.audioUrl} fileName={message.fileName} /> : <div className="max-w-[82%] rounded-2xl rounded-br-md bg-[#211e3a] px-4 py-3 text-sm leading-6 text-[#f0edf7]">{message.content}</div>}</div> : <div key={`${message.role}-${index}`} className="flex items-start gap-3"><div className="grid size-9 shrink-0 place-items-center rounded-full border border-violet-400/30 bg-violet-500/10 text-violet-300"><Music4 className="size-4" /></div><div className="min-w-0 max-w-[88%]"><div className="mb-2 flex items-center gap-2 text-xs text-[#8f8c9c]"><span className="font-semibold text-[#c9c5d3]">MidiFlow AI</span><span>{statusLabel === "Ready" ? "Just now" : "Working"}</span></div><div className="rounded-2xl rounded-tl-md border border-white/[.08] bg-[#151821] p-4 text-sm leading-6 text-[#e5e2eb]"><p>{message.content}</p>{message.fileName ? <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/[.08] bg-[#10121a] p-3"><div className="grid size-10 place-items-center rounded-lg bg-violet-500/15 text-violet-300"><FileMusic className="size-5" /></div><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-white">{message.fileName}</p><p className="text-[11px] text-[#8e8b9a]">MIDI file · {voiceCost} credits</p></div>{downloadUrl ? <a href={downloadUrl} target="_blank" rel="noreferrer" className="grid size-8 place-items-center rounded-full border border-white/[.1] text-violet-300" aria-label="Download MIDI"><ArrowUp className="size-4 rotate-45" /></a> : null}</div> : null}</div></div></div>)}
@@ -599,6 +613,8 @@ export default function VoiceToMidiPage() {
             {error ? <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</p> : null}
           </div>
         </div>
+
+        {showScrollToBottom ? <button type="button" onClick={scrollToLatest} title="Jump to latest message" aria-label="Jump to latest message" className="fixed bottom-28 left-1/2 z-40 grid size-10 -translate-x-1/2 place-items-center rounded-full border border-white/15 bg-[#171427]/95 text-white shadow-[0_12px_35px_rgba(0,0,0,.45)] backdrop-blur transition hover:bg-violet-600 md:bottom-32"><ArrowDown className="size-4" /></button> : null}
 
         <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[.08] bg-[#0b0d14]/95 px-4 pb-4 pt-3 backdrop-blur-xl md:left-80 md:px-10">
           <div className="mx-auto max-w-3xl"><div className="rounded-2xl border border-white/[.12] bg-[#11141d] p-3 shadow-[0_12px_40px_rgba(0,0,0,.22)]"><div className={`mb-2 flex items-center gap-2 px-2 text-xs ${recording ? "text-violet-200" : "text-[#777482]"}`} aria-live="polite">{recording ? <><span className="size-2 animate-pulse rounded-full bg-red-400" />Recording {formatTimer(recordingSeconds)}</> : file ? <><FileMusic className="size-3.5 text-violet-300" />Recording ready to send</> : null}</div>{recording || file ? <div className="mb-3 rounded-xl border border-white/[.08] bg-[#0d1018] p-2"><canvas ref={canvasRef} width={880} height={120} className="h-16 w-full rounded-lg" aria-label="Audio waveform" />{previewUrl && !recording ? <audio controls src={previewUrl} className="mt-2 h-8 w-full" aria-label="Play recording" /> : null}</div> : null}<textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendPrompt(); } }} disabled={recording || busy} rows={2} className="w-full resize-none bg-transparent px-2 text-sm leading-6 text-white outline-none placeholder:text-[#898694] disabled:cursor-default" placeholder={recording ? "Keep holding... release to stop recording" : "Describe the melody you want or use your voice..."} /><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2">{recording || file ? <button type="button" onClick={discardRecording} disabled={busy} aria-label="Delete recording" className="grid size-9 place-items-center rounded-full border border-red-400/30 text-red-300 transition hover:bg-red-500/10 disabled:opacity-50"><Trash2 className="size-4" /></button> : <label className="grid size-9 cursor-pointer place-items-center rounded-full border border-white/[.1] text-[#aaa6b5] transition hover:bg-white/[.06]" aria-label="Upload audio"><PlusIcon /><input type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={(event) => { const nextFile = event.target.files?.[0] ?? null; if (nextFile) { setFile(nextFile); setPreviewUrl(URL.createObjectURL(nextFile)); setStatusLabel("Ready"); } }} /></label>}</div><button type="button" onPointerDown={!prompt && !file && !recording ? (event) => void handleRecordPointerDown(event) : undefined} onPointerMove={!prompt && !file && recording ? handleRecordPointerMove : undefined} onPointerUp={!prompt && !file && recording ? handleRecordPointerUp : undefined} onPointerCancel={!prompt && !file && recording ? handleRecordPointerCancel : undefined} onClick={prompt ? () => void sendPrompt() : file ? () => void runPipeline() : undefined} disabled={busy} aria-label={prompt ? "Send message" : file ? "Send recording" : "Record voice"} className={`grid size-12 shrink-0 place-items-center rounded-full text-white shadow-[0_0_25px_rgba(139,92,246,.45)] transition ${prompt || file ? "bg-violet-500 hover:bg-violet-400" : "bg-violet-600 hover:bg-violet-500"}`}>{prompt || file ? <ArrowUp className="size-5" /> : <Mic className="size-5" />}</button></div></div><p className="mt-2 text-center text-[11px] text-[#777482]">{isAuthenticated && creditResetLabel ? `${creditLabel} · ${voiceCost} credits per Voice-to-MIDI run` : "You can speak or type. I&apos;ll handle the rest."}</p></div>
