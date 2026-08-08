@@ -71,6 +71,15 @@ export default function ProjectPage() {
     return () => element.removeEventListener("scroll", updateScrollState);
   }, [messages.length, composerReply, assistantTyping]);
 
+  useEffect(() => {
+    const element = messagesRef.current;
+    if (!element || loading || !messages.length) return;
+    const frame = window.requestAnimationFrame(() => {
+      element.scrollTop = element.scrollHeight;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading, messages.length]);
+
   const scrollToLatest = () => messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "smooth" });
 
   const loadMessages = useCallback(async () => {
