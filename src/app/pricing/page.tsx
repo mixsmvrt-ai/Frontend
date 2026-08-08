@@ -9,6 +9,7 @@ const plans = [
     price: "$5.99",
     detail: "The essentials for making ideas quickly",
     features: [
+      "1,500 shared monthly credits across Text to MIDI, Voice to MIDI, and Song Pack Generator",
       "Text to MIDI generation",
       "Projects and MIDI downloads",
       "Basic support",
@@ -20,6 +21,7 @@ const plans = [
     price: "$19.99",
     detail: "The complete MidiFlow studio",
     features: [
+      "3,000 shared monthly credits across Text to MIDI, Voice to MIDI, and Song Pack Generator",
       "Everything in Go",
       "Voice to MIDI and Song Pack Generator",
       "Fast support",

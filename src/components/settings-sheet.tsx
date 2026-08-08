@@ -203,8 +203,8 @@ export function SettingsSheet({ isAuthenticated, membership, showAdminLink, onSu
 export function SubscriptionDialog({ membership, onClose }: { membership: MembershipSnapshot | null; onClose: () => void }) {
   const prices = membership?.prices;
   const planCards = [
-    { id: "go" as const, name: "Go", detail: "Text-to-MIDI essentials", fallback: "$5.99", features: ["Text to MIDI generation", "Projects and MIDI downloads", "Basic support"] },
-    { id: "plus" as const, name: "Plus", detail: "The complete MidiFlow studio", fallback: "$19.99", features: ["Everything in Go", "Voice to MIDI and Song Pack Generator", "Fast support"] },
+    { id: "go" as const, name: "Go", detail: "Text-to-MIDI essentials", fallback: "$5.99", features: ["1,500 shared monthly credits", "Text to MIDI generation", "Projects and MIDI downloads", "Basic support"] },
+    { id: "plus" as const, name: "Plus", detail: "The complete MidiFlow studio", fallback: "$19.99", features: ["3,000 shared monthly credits", "Everything in Go", "Voice to MIDI and Song Pack Generator", "Fast support"] },
   ];
 
   return <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Subscription plans">
