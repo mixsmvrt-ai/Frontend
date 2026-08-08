@@ -352,9 +352,9 @@ export default function ProjectPage() {
     const scaleParam = searchParams.get("scale");
     const tempoParam = Number(searchParams.get("tempo"));
     const kind = generationKinds.find((value) => value === kindParam) ?? "melody";
-    const scale = scaleParam === "major" ? "major" : "minor";
-    const key = searchParams.get("key") || "A";
-    const tempo = Number.isInteger(tempoParam) && tempoParam >= 40 && tempoParam <= 240 ? tempoParam : 140;
+    const scale = scaleParam === "major" || scaleParam === "minor" ? scaleParam : undefined;
+    const key = searchParams.get("key") || undefined;
+    const tempo = Number.isInteger(tempoParam) && tempoParam >= 40 && tempoParam <= 240 ? tempoParam : undefined;
 
     initialPromptSubmittedRef.current = true;
     router.replace(`/projects/${projectId}`);
@@ -362,8 +362,9 @@ export default function ProjectPage() {
       prompt,
       kind,
       key,
-      scale,
-      tempo,
+      ...(scale ? { scale } : {}),
+      ...(key ? { key } : {}),
+      ...(tempo !== undefined ? { tempo } : {}),
     }).catch((error: unknown) => {
       initialPromptSubmittedRef.current = false;
       toast.error(error instanceof Error ? error.message : "Unable to send the first project prompt.");
@@ -405,7 +406,7 @@ export default function ProjectPage() {
                     </div>
                   ) : (
                     <div className="flex items-end gap-3">
-                      <p>{message.content}</p>
+                      {!isGeneration && <p>{message.content}</p>}
                       {isUser ? (
                         <button type="button" onClick={() => beginEditing(message)} className="shrink-0 text-white/65 transition hover:text-white" aria-label="Edit message">
                           <Pencil className="size-3.5" />
@@ -415,7 +416,7 @@ export default function ProjectPage() {
                   )}
                   {isGeneration ? (
                     <>
-                      <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-white"><Music2 className="size-4 text-violet-200" />{midiTitle}</p>
+                      <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-white"><Music2 className="size-4 text-violet-200" />{message.content || midiTitle}</p>
                       <div className="mt-3 flex items-center gap-2">
                         <button type="button" title="Download MIDI" aria-label="Download MIDI" onClick={() => void openExport(message.generation_id!)} disabled={Boolean(actionState)} className="grid size-9 place-items-center rounded-full border border-white/10 text-white transition hover:bg-white/[.08] disabled:opacity-60">{actionState === "download" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}</button>
                         {exports?.some((file) => file.kind === "multi") ? <button type="button" title="Download multi-track MIDI" aria-label="Download multi-track MIDI" onClick={() => void openExport(message.generation_id!, "multi")} disabled={Boolean(actionState)} className="grid size-9 place-items-center rounded-full border border-white/10 text-white transition hover:bg-white/[.08] disabled:opacity-60"><Download className="size-4" /></button> : null}
