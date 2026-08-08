@@ -597,8 +597,8 @@ export default function VoiceToMidiPage() {
 
   return (
     <AppShell>
-      <section className="mx-auto flex min-h-[calc(100dvh-2.5rem)] max-w-[1120px] flex-col overflow-hidden rounded-[22px] border border-white/[.08] bg-[#0b0d14] shadow-[0_24px_80px_rgba(0,0,0,.28)]">
-        <header className="flex items-center justify-between border-b border-white/[.08] px-5 py-4 md:px-7">
+      <section className="mx-auto flex min-h-[calc(100dvh-2.5rem)] max-w-5xl flex-col">
+        <header className="flex items-center justify-between px-1 py-3 md:px-4 md:py-5">
           <div className="flex items-center gap-3"><div className="grid size-9 place-items-center rounded-xl bg-violet-500/10 text-violet-300"><Waves className="size-5" /></div><div><h1 className="text-lg font-bold text-white">Voice to MIDI</h1><p className="text-xs text-[#a8a8b5]">Speak your idea. I&apos;ll turn it into MIDI.</p></div></div>
           <div className="flex items-center gap-2"><button type="button" className="hidden items-center gap-2 rounded-lg border border-white/[.1] px-3 py-2 text-xs text-[#d6d2df] sm:flex"><History className="size-3.5" />History</button><button type="button" aria-label="Voice settings" className="grid size-9 place-items-center rounded-lg border border-white/[.1] text-[#aaa8b8]"><SlidersHorizontal className="size-4" /></button></div>
         </header>

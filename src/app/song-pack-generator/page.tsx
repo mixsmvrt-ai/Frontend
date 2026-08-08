@@ -265,14 +265,14 @@ export default function SongPackGeneratorPage() {
 
   return (
     <AppShell>
-      <section className="mx-auto max-w-6xl pb-24">
-        <header className="grid gap-6 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,.22),_transparent_42%),linear-gradient(145deg,_rgba(15,14,29,.96),_rgba(9,8,22,.98))] p-8 lg:grid-cols-[1.1fr_.9fr]">
+      <section className="mx-auto max-w-5xl pb-24">
+        <header className="grid gap-6 px-1 py-3 md:px-4 md:py-5 lg:grid-cols-[1.1fr_.9fr]">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">Pro Workspace</p>
             <h1 className="mt-3 text-4xl font-black tracking-tight">AI Song Pack Generator</h1>
             <p className="mt-4 max-w-3xl text-[#beb8d1]">Describe the beat you want to build and choose which MIDI parts you want included.</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
+          <div className="border-l border-white/10 pl-5">
             <p className="text-sm font-semibold text-white">Credits</p>
             <p className="mt-4 text-4xl font-black">{displayedCredits}</p>
             <p className="mt-2 text-sm text-[#beb8d1]">{!isAuthenticated ? "Every signed-in account gets 1,500 monthly credits. Song Pack Generator uses 75 credits per generation." : membership?.type === "pro" || membership?.type === "trial" || membership?.type === "admin" ? `Estimated cost for this pack: ${estimatedCost} credits. ${creditResetLabel ? `Credits reset on ${creditResetLabel}.` : ""}` : "Active Pro access is required for Song Pack Generator."}</p>
