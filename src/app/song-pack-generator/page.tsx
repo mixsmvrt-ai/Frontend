@@ -255,7 +255,7 @@ export default function SongPackGeneratorPage() {
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_.9fr]">
           <section className="glass rounded-2xl p-6">
-            <label className="block text-sm font-medium">Prompt<textarea value={input.prompt} onChange={(event) => setInput((current) => ({ ...current, prompt: event.target.value }))} className="field mt-2 min-h-32" placeholder="Create a dark Jamaican trap dancehall beat at 100 BPM with emotional piano, deep bass, simple counter melody and no lead." /></label>
+            <label className="block text-sm font-medium">Prompt<textarea value={input.prompt} onChange={(event) => setInput((current) => ({ ...current, prompt: event.target.value }))} rows={1} className="field mt-2 h-12 min-h-12 resize-none rounded-[2rem] px-4 py-3" placeholder="Create a dark Jamaican trap dancehall beat at 100 BPM with emotional piano, deep bass, simple counter melody and no lead." /></label>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <label className="block text-sm font-medium">Genre<input value={input.genre ?? ""} onChange={(event) => setInput((current) => ({ ...current, genre: event.target.value }))} className="field mt-2" placeholder="Auto Detect" /></label>
               <label className="block text-sm font-medium">Mood<input value={input.mood ?? ""} onChange={(event) => setInput((current) => ({ ...current, mood: event.target.value }))} className="field mt-2" placeholder="Auto Detect" /></label>
@@ -285,7 +285,7 @@ export default function SongPackGeneratorPage() {
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={() => void generate()} disabled={busy || (isAuthenticated && (loading || !credits?.config.enabled))} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white disabled:opacity-60">{busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}{busy ? "Generating" : "Generate Song Pack"}</button>
+              <button type="button" title="Generate song pack" aria-label="Generate song pack" onClick={() => void generate()} disabled={busy || (isAuthenticated && (loading || !credits?.config.enabled))} className="grid size-11 place-items-center rounded-full bg-violet-600 text-white shadow-[0_0_22px_rgba(139,92,246,.35)] disabled:opacity-60">{busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}</button>
               <p className="text-sm text-[#aaa3bd]">Song Pack Generator uses {estimatedCost} credits per generation from your 1,500 monthly credits.</p>
             </div>
             {error ? <p className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</p> : null}
@@ -307,9 +307,9 @@ export default function SongPackGeneratorPage() {
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#d4cfe0]"><span className="rounded-full bg-white/10 px-3 py-1">{activePack.tempo ?? "Auto"} BPM</span><span className="rounded-full bg-white/10 px-3 py-1">{activePack.key ?? "Auto Key"}</span><span className="rounded-full bg-white/10 px-3 py-1">{activePack.scale ?? "Auto Scale"}</span><span className="rounded-full bg-white/10 px-3 py-1">{activePack.creditsUsed} credits used</span></div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <a href={activePack.download.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white"><Download className="size-4" />Download Entire Pack</a>
-                <button type="button" onClick={() => void regeneratePack()} disabled={busy} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"><RefreshCcw className="size-4" />Regenerate Entire Pack</button>
-                <Link href={`/projects/${activePack.projectId}`} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-white"><Music4 className="size-4" />Open Project</Link>
+                <a href={activePack.download.url} target="_blank" rel="noreferrer" title="Download entire song pack" aria-label="Download entire song pack" className="grid size-10 place-items-center rounded-full bg-violet-600 text-white"><Download className="size-4" /></a>
+                <button type="button" title="Regenerate entire song pack" aria-label="Regenerate entire song pack" onClick={() => void regeneratePack()} disabled={busy} className="grid size-10 place-items-center rounded-full border border-white/10 text-white disabled:opacity-60"><RefreshCcw className="size-4" /></button>
+                <Link href={`/projects/${activePack.projectId}`} title="Open project" aria-label="Open project" className="grid size-10 place-items-center rounded-full border border-white/10 text-white"><Music4 className="size-4" /></Link>
               </div>
             </div>
             <div className="mt-8 grid gap-4 lg:grid-cols-2">
@@ -321,8 +321,8 @@ export default function SongPackGeneratorPage() {
                       <p className="mt-2 text-sm text-[#b9b3ca]">{part.summary.noteCount} notes · {part.summary.tempo} BPM · {part.summary.key} · {part.summary.scale}</p>
                     </div>
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => part.url ? window.open(part.url, "_blank", "noopener,noreferrer") : void toast.error("Download is not available for this part yet.")} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-white">Download</button>
-                      <button type="button" onClick={() => void regeneratePart(part.id)} disabled={busy} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Regenerate</button>
+                      <button type="button" title={`Download ${part.label}`} aria-label={`Download ${part.label}`} onClick={() => part.url ? window.open(part.url, "_blank", "noopener,noreferrer") : void toast.error("Download is not available for this part yet.")} className="grid size-9 place-items-center rounded-full border border-white/10 text-white"><Download className="size-4" /></button>
+                      <button type="button" title={`Regenerate ${part.label}`} aria-label={`Regenerate ${part.label}`} onClick={() => void regeneratePart(part.id)} disabled={busy} className="grid size-9 place-items-center rounded-full border border-white/10 text-white disabled:opacity-60"><RefreshCcw className="size-4" /></button>
                     </div>
                   </div>
                   <PartPreview part={part} />

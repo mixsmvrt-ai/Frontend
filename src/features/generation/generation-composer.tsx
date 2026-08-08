@@ -221,13 +221,14 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
 
   return (
     <section className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[.08] bg-black/95 px-4 py-3 backdrop-blur-xl md:left-80 md:px-8">
-      <div ref={composerRef} className="relative rounded-2xl border border-violet-500/80 bg-[#0e0e1d]/90 p-3 shadow-[0_0_40px_rgba(104,58,255,.10)]">
+      <div ref={composerRef} className="relative rounded-[2rem] border border-violet-500/80 bg-[#0e0e1d]/90 p-2 shadow-[0_0_40px_rgba(104,58,255,.10)]">
         <textarea
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           placeholder="Describe your melody..."
           aria-label="Music generation prompt"
-          className="min-h-20 w-full resize-none bg-transparent px-3 py-3 text-[16px] leading-7 text-white outline-none placeholder:text-[#8f8da3]"
+          rows={1}
+          className="h-10 min-h-10 w-full resize-none bg-transparent px-3 py-2 text-[16px] leading-6 text-white outline-none placeholder:text-[#8f8da3]"
         />
         {settingsOpen ? (
           <>
@@ -298,7 +299,7 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
             </motion.div>
           </>
         ) : null}
-        <div className="flex items-center justify-between gap-3 px-2 pb-2">
+        <div className="flex items-center justify-between gap-3 px-2 pb-1">
           <div className="flex min-w-0 items-center gap-3">
             <motion.button
               type="button"
@@ -313,14 +314,14 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
               <Plus className={`size-5 transition-transform ${settingsOpen ? "rotate-45" : "rotate-0"}`} />
             </motion.button>
           </div>
-          {textCreditsLow ? <p className="mb-2 text-right text-xs text-amber-200">Text-to-MIDI credits are {Math.round(textCredits?.textUsagePercent ?? 0)}% used.</p> : null}
+          {textCreditsLow ? <p className="mb-1 text-right text-xs text-amber-200">Text-to-MIDI credits are {Math.round(textCredits?.textUsagePercent ?? 0)}% used.</p> : null}
           <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={generate} disabled={busy || creditsExhausted} aria-label="Generate MIDI" className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-[0_0_25px_rgba(119,75,255,.65)] disabled:opacity-60">
             <ArrowUp className="size-5" />
           </motion.button>
         </div>
       </div>
       {localReplyState ? (
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[.04] px-4 py-4 text-sm text-[#ddd9e7]">
+        <div className="mt-3 rounded-[1.5rem] border border-white/10 bg-white/[.04] px-4 py-3 text-sm text-[#ddd9e7]">
           {localReplyState.status === "processing" ? (
             <>
               <div className="flex items-center gap-2 text-white">
@@ -345,12 +346,10 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
             </>
           ) : (
             <>
-              <p className="font-medium text-white">Done</p>
-              <p className="mt-2 text-[#c2bdd2]">Your MIDI file is ready.</p>
+              <p className="truncate font-medium text-white">{localReplyState.fileName ?? "MIDI file ready"}</p>
               {localReplyState.downloadUrl && localReplyState.fileName ? (
-                <button type="button" onClick={() => downloadFile(localReplyState.downloadUrl!, localReplyState.fileName!)} className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 font-semibold text-white">
+                <button type="button" title="Download MIDI" aria-label="Download MIDI" onClick={() => downloadFile(localReplyState.downloadUrl!, localReplyState.fileName!)} className="mt-3 grid size-9 place-items-center rounded-full border border-white/10 bg-white/[.03] text-white transition hover:bg-white/[.08]">
                   <Download className="size-3.5" />
-                  {localReplyState.fileName}
                 </button>
               ) : null}
             </>

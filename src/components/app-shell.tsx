@@ -237,9 +237,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     : projects;
 
   const showAdminLink = Boolean(isAuthenticated && membership?.isAdmin);
-  const showPlanPricing = pathname === "/";
-  const pricingHref = "/pricing";
-
   const sidebar = (
     <>
       <div className="flex items-center justify-between px-5 py-5">
@@ -356,18 +353,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-black text-white md:flex">
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-black/95 px-4 py-3 backdrop-blur md:hidden">
-        <button type="button" onClick={() => setMobileOpen(true)} className="grid size-10 place-items-center rounded-xl bg-white/[.06]" aria-label="Open sidebar">
+      <button type="button" onClick={() => setMobileOpen(true)} className="fixed left-4 top-4 z-50 grid size-11 place-items-center rounded-full border border-white/10 bg-black/75 text-white shadow-[0_12px_32px_rgba(0,0,0,.35)] backdrop-blur transition hover:bg-white/[.12] md:hidden" aria-label="Open sidebar">
           <Menu className="size-5" />
-        </button>
-        <Link href="/dashboard" className="flex items-center gap-2.5 text-base font-black tracking-tight">
-          <AudioLines className="size-5 text-fuchsia-500" />
-          MidiFlow
-        </Link>
-        <Link href={pricingHref} className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold">
-          {showPlanPricing ? "Pricing" : isAuthenticated ? membership?.type === "trial" ? `${membership.daysRemaining} days` : membership?.type === "pro" ? "Pro" : "Pricing" : "Pricing"}
-        </Link>
-      </div>
+      </button>
 
       {mobileOpen ? <button type="button" className="fixed inset-0 z-40 bg-black/60 md:hidden" aria-label="Close sidebar overlay" onClick={() => setMobileOpen(false)} /> : null}
 

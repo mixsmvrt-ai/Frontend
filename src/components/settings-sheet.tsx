@@ -161,10 +161,17 @@ export function SettingsSheet({ isAuthenticated, membership, showAdminLink, onSu
     </div>
 
     <div className="overflow-hidden rounded-[28px] bg-[#2b2b2d]">
-      <button type="button" onClick={() => void openPanel("account")} className="flex w-full items-center gap-4 border-b border-white/[.1] px-4 py-5 text-left">
-        <span className="grid size-12 place-items-center rounded-full bg-violet-500 text-lg font-bold">{isAuthenticated ? "MF" : <UserRound className="size-5" />}</span>
-        <span className="min-w-0 flex-1"><span className="block truncate text-base font-bold">{isAuthenticated ? "My account" : "Sign in"}</span><span className="mt-1 block truncate text-xs text-[#a9a9b0]">{accountStatus}</span></span><span className="text-2xl text-[#77777e]">›</span>
-      </button>
+      {isAuthenticated ? (
+        <button type="button" onClick={() => void openPanel("account")} className="flex w-full items-center gap-4 border-b border-white/[.1] px-4 py-5 text-left">
+          <span className="grid size-12 place-items-center rounded-full bg-violet-500 text-lg font-bold">MF</span>
+          <span className="min-w-0 flex-1"><span className="block truncate text-base font-bold">My account</span><span className="mt-1 block truncate text-xs text-[#a9a9b0]">{accountStatus}</span></span><span className="text-2xl text-[#77777e]">›</span>
+        </button>
+      ) : (
+        <Link href="/login?next=%2Fcreate" onClick={onNavigate} className="flex w-full items-center gap-4 border-b border-white/[.1] px-4 py-5 text-left transition hover:bg-white/[.06]">
+          <span className="grid size-12 place-items-center rounded-full bg-violet-500 text-lg font-bold"><UserRound className="size-5" /></span>
+          <span className="min-w-0 flex-1"><span className="block truncate text-base font-bold">Log in or create an account</span><span className="mt-1 block truncate text-xs text-[#a9a9b0]">Save projects and generate MIDI</span></span><span className="text-2xl text-[#77777e]">›</span>
+        </Link>
+      )}
       <button type="button" onClick={onSubscription} className="flex w-full items-center gap-4 border-b border-white/[.1] px-4 py-4 text-left transition hover:bg-white/[.06]"><Sparkles className="size-5 text-sky-300" /><span className="min-w-0 flex-1"><span className="block text-[15px] font-semibold">Subscription</span><span className="mt-1 block text-xs text-[#a9a9b0]">{membership?.type === "pro" ? `${membership.plan === "go" ? "Go" : "Plus"} active` : "Choose a plan"}</span></span><span className="text-2xl text-[#77777e]">›</span></button>
     </div>
 

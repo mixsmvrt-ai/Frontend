@@ -99,6 +99,23 @@ textarea[placeholder*="Recording locked"] ~ div button[aria-label="Record voice"
   letter-spacing: .08em;
 }
 
+section:has(textarea[placeholder*="Describe the melody"]) > div.fixed.bottom-0 > div > div {
+  border-radius: 2rem;
+  padding: .5rem;
+}
+
+textarea[placeholder*="Describe the melody"] {
+  height: 2.5rem;
+  min-height: 2.5rem;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+}
+
+section:has(textarea[placeholder*="Describe the melody"]) .rounded-2xl.rounded-tl-md {
+  border-radius: 1.5rem;
+  padding: .75rem;
+}
+
 @keyframes voice-lock-hint {
   0%, 100% { transform: translateY(.2rem); opacity: .65; }
   50% { transform: translateY(-.2rem); opacity: 1; }
