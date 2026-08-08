@@ -309,16 +309,18 @@ export default function ProjectPage() {
     try {
       const result = await projectsApi.createMessage(projectId, {
         content: input.prompt,
-        generation: {
-          ...(input.kind ? { kind: input.kind } : {}),
-          key: input.key,
-          scale: input.scale,
-          tempo: input.tempo,
-          lengthBars: 8,
-          complexity: "medium",
-          variationAmount: 0.5,
-          timeSignature: [4, 4],
-        },
+        ...(input.kind ? {
+          generation: {
+            kind: input.kind,
+            key: input.key,
+            scale: input.scale,
+            tempo: input.tempo,
+            lengthBars: 8,
+            complexity: "medium",
+            variationAmount: 0.5,
+            timeSignature: [4, 4],
+          },
+        } : {}),
       });
 
       if (result.data.mode === "generation") {
