@@ -84,17 +84,29 @@ export default function SongPackGeneratorPage() {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
   useEffect(() => {
-    const updateScrollState = () => setShowScrollToBottom(document.documentElement.scrollHeight - window.scrollY - window.innerHeight > 120);
+    const updateScrollState = () => {
+      const main = document.querySelector("main");
+      const mainRemaining = main ? main.scrollHeight - main.scrollTop - main.clientHeight : 0;
+      const pageRemaining = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
+      setShowScrollToBottom(Math.max(mainRemaining, pageRemaining) > 80);
+    };
     updateScrollState();
-    window.addEventListener("scroll", updateScrollState, { passive: true });
+    document.addEventListener("scroll", updateScrollState, { passive: true, capture: true });
     window.addEventListener("resize", updateScrollState);
     return () => {
-      window.removeEventListener("scroll", updateScrollState);
+      document.removeEventListener("scroll", updateScrollState, true);
       window.removeEventListener("resize", updateScrollState);
     };
   }, [activePack]);
 
-  const scrollToLatest = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+  const scrollToLatest = () => {
+    const main = document.querySelector("main");
+    if (main && main.scrollHeight - main.clientHeight > 0) {
+      main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
+      return;
+    }
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+  };
 
   useEffect(() => {
     if (!supabase) {
