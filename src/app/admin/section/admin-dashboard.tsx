@@ -174,6 +174,16 @@ type DashboardBundle = {
   users: UserRow[];
   supportTickets: Row[];
 };
+const ANALYTICS_TABS: AdminTab[] = [
+  { key: "overview", label: "Overview", mode: "dashboard" },
+  { key: "users", label: "Users", mode: "membershipOverview" },
+  { key: "revenue", label: "Revenue", mode: "collection", resourceKey: "payments" },
+  { key: "ai-usage", label: "AI Usage", mode: "aiOrchestratorOverview" },
+  { key: "music-generation", label: "Music Generation", mode: "songPackOverview" },
+  { key: "retention", label: "Retention", mode: "membershipOverview" },
+  { key: "conversion", label: "Conversion", mode: "membershipOverview" },
+  { key: "traffic", label: "Traffic", mode: "placeholder", description: "Traffic analytics is not stored in the current schema yet." },
+];
 
 const MENUS: AdminMenu[] = [
   {
@@ -182,16 +192,7 @@ const MENUS: AdminMenu[] = [
     icon: LayoutDashboard,
     href: "/admin",
     description: "Platform overview, health, and quick actions.",
-      tabs: [
-        { key: "overview", label: "Overview", mode: "dashboard" },
-        { key: "users", label: "Users", mode: "membershipOverview" },
-        { key: "revenue", label: "Revenue", mode: "collection", resourceKey: "payments" },
-        { key: "ai-usage", label: "AI Usage", mode: "aiOrchestratorOverview" },
-        { key: "music-generation", label: "Music Generation", mode: "songPackOverview" },
-        { key: "retention", label: "Retention", mode: "membershipOverview" },
-        { key: "conversion", label: "Conversion", mode: "membershipOverview" },
-        { key: "traffic", label: "Traffic", mode: "placeholder", description: "Traffic analytics is not stored in the current schema yet." },
-      ],
+    tabs: ANALYTICS_TABS,
   },
   {
     key: "users",
