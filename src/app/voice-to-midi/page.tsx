@@ -137,7 +137,6 @@ export default function VoiceToMidiPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
-  const [recordingLocked, setRecordingLocked] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [, setInputLevel] = useState(0);
   const [error, setError] = useState("");
@@ -161,6 +160,7 @@ export default function VoiceToMidiPage() {
   const chunksRef = useRef<Blob[]>([]);
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const holdShouldStopRef = useRef(true);
+  const recordingLockedRef = useRef(false);
   const pressedRef = useRef(false);
   const discardRecordingRef = useRef(false);
   const voiceScrollRef = useRef<HTMLDivElement | null>(null);
@@ -378,7 +378,7 @@ export default function VoiceToMidiPage() {
       mediaRecorderRef.current = null;
       await stopVisualizer();
       setRecording(false);
-      setRecordingLocked(false);
+      recordingLockedRef.current = false;
       pressedRef.current = false;
       pointerStartRef.current = null;
       holdShouldStopRef.current = true;
@@ -399,7 +399,7 @@ export default function VoiceToMidiPage() {
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
       setRecording(true);
-      setRecordingLocked(false);
+      recordingLockedRef.current = false;
       setRecordingSeconds(0);
       setError("");
       setStatusLabel("Record or upload");
@@ -461,16 +461,17 @@ export default function VoiceToMidiPage() {
     }
     pointerStartRef.current = { x: event.clientX, y: event.clientY };
     pressedRef.current = true;
+    recordingLockedRef.current = false;
     holdShouldStopRef.current = true;
     (event.currentTarget as HTMLButtonElement).setPointerCapture(event.pointerId);
     await beginRecording();
   };
 
   const handleRecordPointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (!recording || !pressedRef.current || recordingLocked || !pointerStartRef.current) return;
+    if (!recording || !pressedRef.current || recordingLockedRef.current || !pointerStartRef.current) return;
     const deltaY = pointerStartRef.current.y - event.clientY;
     if (deltaY >= lockThresholdPx) {
-      setRecordingLocked(true);
+      recordingLockedRef.current = true;
       holdShouldStopRef.current = false;
       toast.success("Recording locked. Tap stop when you're done.");
     }
@@ -482,7 +483,7 @@ export default function VoiceToMidiPage() {
     }
     pressedRef.current = false;
     pointerStartRef.current = null;
-    if (recording && !recordingLocked && holdShouldStopRef.current) {
+    if (recording && !recordingLockedRef.current && holdShouldStopRef.current) {
       stopRecording();
     }
   };
@@ -490,7 +491,7 @@ export default function VoiceToMidiPage() {
   const handleRecordPointerCancel = () => {
     pressedRef.current = false;
     pointerStartRef.current = null;
-    if (recording && !recordingLocked && holdShouldStopRef.current) {
+    if (recording && !recordingLockedRef.current && holdShouldStopRef.current) {
       stopRecording();
     }
   };
