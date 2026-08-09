@@ -16,7 +16,6 @@ import {
   FileText,
   FolderKanban,
   Headset,
-  LayoutDashboard,
   Loader2,
   Menu,
   Music2,
@@ -187,14 +186,6 @@ const ANALYTICS_TABS: AdminTab[] = [
 
 const MENUS: AdminMenu[] = [
   {
-    key: "dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    href: "/admin",
-    description: "Platform overview, health, and quick actions.",
-    tabs: ANALYTICS_TABS,
-  },
-  {
     key: "users",
     label: "Users",
     icon: Users,
@@ -305,16 +296,7 @@ const MENUS: AdminMenu[] = [
     icon: BarChart3,
     href: "/admin/analytics",
     description: "Users, revenue, AI usage, conversion, and generation insights.",
-    tabs: [
-      { key: "overview", label: "Overview", mode: "dashboard" },
-      { key: "users", label: "Users", mode: "membershipOverview" },
-      { key: "revenue", label: "Revenue", mode: "collection", resourceKey: "payments" },
-      { key: "ai-usage", label: "AI Usage", mode: "aiOrchestratorOverview" },
-      { key: "music-generation", label: "Music Generation", mode: "songPackOverview" },
-      { key: "retention", label: "Retention", mode: "membershipOverview" },
-      { key: "conversion", label: "Conversion", mode: "membershipOverview" },
-      { key: "traffic", label: "Traffic", mode: "placeholder", description: "Traffic analytics is not stored in the current schema yet." },
-    ],
+    tabs: ANALYTICS_TABS,
   },
   {
     key: "content",
@@ -406,7 +388,6 @@ function routeFor(menu: AdminMenu, tab: AdminTab) {
   if (menu.key === "music-brain" && tab.key === "artists") return "/admin/artistProfiles";
   if (menu.key === "music-brain" && tab.key === "genres") return "/admin/genreProfiles";
   const defaultTab = menu.tabs[0];
-  if (menu.key === "dashboard") return "/admin";
   return tab.key === defaultTab.key ? `/admin/${menu.key}` : `/admin/${menu.key}/${tab.key}`;
 }
 
@@ -546,10 +527,9 @@ export default function AdminDashboardPage() {
   const [payload, setPayload] = useState("{}");
   const [userEditor, setUserEditor] = useState<UserEditor | null>(null);
 
-  const menuKey = params.section?.[0] ?? "dashboard";
+  const menuKey = params.section?.[0] ?? "analytics";
   const activeMenu = MENUS.find((menu) => menu.key === menuKey) ?? MENUS[0];
-  const contentMenu = activeMenu.key === "dashboard" ? MENUS.find((menu) => menu.key === "analytics") ?? activeMenu : activeMenu;
-  const activeTab = contentMenu.tabs.find((tab) => tab.key === (params.section?.[1] ?? contentMenu.tabs[0].key)) ?? contentMenu.tabs[0];
+  const activeTab = activeMenu.tabs.find((tab) => tab.key === (params.section?.[1] ?? activeMenu.tabs[0].key)) ?? activeMenu.tabs[0];
 
   const fetchAdmin = useCallback(async (path: string, authUserId: string, search?: URLSearchParams) => {
     const suffix = search && search.size ? `?${search.toString()}` : "";
@@ -856,9 +836,9 @@ export default function AdminDashboardPage() {
         <section className="p-4 md:p-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">{contentMenu.label}</p>
+              <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">{activeMenu.label}</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight">{activeTab.label}</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-[#aaa3bd]">{activeTab.description ?? contentMenu.description}</p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-[#aaa3bd]">{activeTab.description ?? activeMenu.description}</p>
             </div>
             {activeTab.mode === "collection" && activeTab.editable !== false ? (
               <button type="button" onClick={() => { setEditing(null); setPayload("{}"); }} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold">
@@ -869,8 +849,8 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
-            {contentMenu.tabs.map((tab) => (
-              <Link key={tab.key} href={routeFor(contentMenu, tab)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${tab.key === activeTab.key ? "bg-white text-black" : "border border-white/10 bg-white/[.03] text-[#d2cde0] hover:bg-white/[.07] hover:text-white"}`}>
+            {activeMenu.tabs.map((tab) => (
+              <Link key={tab.key} href={routeFor(activeMenu, tab)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${tab.key === activeTab.key ? "bg-white text-black" : "border border-white/10 bg-white/[.03] text-[#d2cde0] hover:bg-white/[.07] hover:text-white"}`}>
                 {tab.label}
               </Link>
             ))}
