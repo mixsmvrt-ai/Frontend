@@ -133,6 +133,7 @@ export default function VoiceToMidiPage() {
   const [authResolved, setAuthResolved] = useState(false);
   const { membership } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
   const [file, setFile] = useState<File | null>(null);
+  const [recordingConfirmed, setRecordingConfirmed] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -362,6 +363,7 @@ export default function VoiceToMidiPage() {
       const wavFile = await recordedBlobToWavFile(blob);
       const nextPreviewUrl = URL.createObjectURL(wavFile);
       setFile(wavFile);
+      setRecordingConfirmed(false);
       setPreviewUrl((current) => {
         if (current) URL.revokeObjectURL(current);
         return nextPreviewUrl;
@@ -405,6 +407,7 @@ export default function VoiceToMidiPage() {
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
       }
+      setRecordingConfirmed(false);
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -443,6 +446,7 @@ export default function VoiceToMidiPage() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setFile(null);
+    setRecordingConfirmed(false);
     setStatusLabel("Waiting");
     setRecordingSeconds(0);
     setError("");
@@ -494,6 +498,12 @@ export default function VoiceToMidiPage() {
   const runPipeline = async () => {
     if (!file) {
       setError("Choose an audio file or record a phrase first.");
+      return;
+    }
+    if (!recordingConfirmed) {
+      setRecordingConfirmed(true);
+      setStatusLabel("Ready");
+      toast("Recording ready", { description: "Review the audio, then press send again to generate MIDI." });
       return;
     }
     if (!isAuthenticated) {
@@ -723,6 +733,7 @@ function VoiceMessage({ src, fileName }: { src: string; fileName?: string }) {
                       URL.revokeObjectURL(previewUrl);
                       setPreviewUrl(null);
                     }
+                    setRecordingConfirmed(false);
                     if (nextFile) {
                       setPreviewUrl(URL.createObjectURL(nextFile));
                       setStatusLabel("Ready");
