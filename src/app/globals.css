@@ -122,17 +122,20 @@ section:has(textarea[placeholder*="Describe the melody"]) .rounded-2xl.rounded-t
 }
 
 [data-admin-shell] .bg-violet-600,
-[data-admin-shell] .bg-violet-600\/90 { background-color: #a7e2d9 !important; color: #12151a !important; }
+[data-admin-shell] .bg-violet-600\/90 { background-color: #7c3aed !important; color: #ffffff !important; }
 [data-admin-shell] .bg-violet-500\/10,
-[data-admin-shell] .bg-violet-500\/\[\.05\] { background-color: rgba(167, 226, 217, .1) !important; }
+[data-admin-shell] .bg-violet-500\/\[\.05\] { background-color: rgba(124, 58, 237, .12) !important; }
 [data-admin-shell] .text-violet-300,
-[data-admin-shell] .text-violet-200 { color: #a7e2d9 !important; }
+[data-admin-shell] .text-violet-200 { color: #c4b5fd !important; }
 [data-admin-shell] .border-violet-400\/30,
-[data-admin-shell] .border-violet-400\/50 { border-color: rgba(167, 226, 217, .35) !important; }
+[data-admin-shell] .border-violet-400\/50 { border-color: rgba(167, 139, 250, .42) !important; }
+[data-admin-shell] .bg-\[\#a7e2d9\] { background-color: #7c3aed !important; color: #ffffff !important; }
+[data-admin-shell] .text-\[\#a7e2d9\] { color: #c4b5fd !important; }
+[data-admin-shell] .bg-\[\#253c3e\] { background-color: rgba(124, 58, 237, .18) !important; }
 [data-admin-shell] article.rounded-2xl,
 [data-admin-shell] section.rounded-2xl,
-[data-admin-shell] section.rounded-3xl { background-color: #20212b; border-color: rgba(255,255,255,.07); }
-[data-admin-shell] table thead { background-color: #242631 !important; }
+[data-admin-shell] section.rounded-3xl { background-color: #171126; border-color: rgba(167,139,250,.16); }
+[data-admin-shell] table thead { background-color: #21163a !important; }
 [data-admin-shell] table tbody tr { border-color: rgba(255,255,255,.06) !important; }
 [data-admin-shell] textarea,
 [data-admin-shell] .bg-\[\#0c0b18\] { background-color: #13151c !important; }

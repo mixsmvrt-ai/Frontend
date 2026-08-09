@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -181,7 +182,16 @@ const MENUS: AdminMenu[] = [
     icon: LayoutDashboard,
     href: "/admin",
     description: "Platform overview, health, and quick actions.",
-    tabs: [{ key: "overview", label: "Overview", mode: "dashboard", description: "Platform metrics and system status." }],
+      tabs: [
+        { key: "overview", label: "Overview", mode: "dashboard" },
+        { key: "users", label: "Users", mode: "membershipOverview" },
+        { key: "revenue", label: "Revenue", mode: "collection", resourceKey: "payments" },
+        { key: "ai-usage", label: "AI Usage", mode: "aiOrchestratorOverview" },
+        { key: "music-generation", label: "Music Generation", mode: "songPackOverview" },
+        { key: "retention", label: "Retention", mode: "membershipOverview" },
+        { key: "conversion", label: "Conversion", mode: "membershipOverview" },
+        { key: "traffic", label: "Traffic", mode: "placeholder", description: "Traffic analytics is not stored in the current schema yet." },
+      ],
   },
   {
     key: "users",
@@ -537,7 +547,8 @@ export default function AdminDashboardPage() {
 
   const menuKey = params.section?.[0] ?? "dashboard";
   const activeMenu = MENUS.find((menu) => menu.key === menuKey) ?? MENUS[0];
-  const activeTab = activeMenu.tabs.find((tab) => tab.key === (params.section?.[1] ?? activeMenu.tabs[0].key)) ?? activeMenu.tabs[0];
+  const contentMenu = activeMenu.key === "dashboard" ? MENUS.find((menu) => menu.key === "analytics") ?? activeMenu : activeMenu;
+  const activeTab = contentMenu.tabs.find((tab) => tab.key === (params.section?.[1] ?? contentMenu.tabs[0].key)) ?? contentMenu.tabs[0];
 
   const fetchAdmin = useCallback(async (path: string, authUserId: string, search?: URLSearchParams) => {
     const suffix = search && search.size ? `?${search.toString()}` : "";
@@ -804,7 +815,7 @@ export default function AdminDashboardPage() {
     <main data-admin-shell className="min-h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#303139] p-3 text-[#f2f4f4] md:p-6">
       <div className="mx-auto flex min-h-[calc(100dvh-3rem)] max-w-[1500px] overflow-hidden rounded-[24px] border border-white/[.06] bg-[#171820] shadow-[0_28px_80px_rgba(9,10,16,.35)]">
         <aside className="hidden w-16 shrink-0 flex-col items-center border-r border-white/[.06] bg-[#111219] py-5 md:flex">
-          <Link href="/dashboard" className="grid size-9 place-items-center rounded-xl bg-[#a7e2d9] text-[#111219]" aria-label="MidiFlow dashboard"><Music2 className="size-5" /></Link>
+          <Link href="/dashboard" className="grid size-9 place-items-center rounded-xl bg-black/30" aria-label="MidiFlow dashboard"><Image src="/midiflow-logo.svg" alt="MidiFlow" width={20} height={20} /></Link>
           <div className="mt-10 flex flex-1 flex-col items-center gap-6 text-[#747986]">
             {MENUS.slice(0, 8).map((menu) => {
               const Icon = menu.icon;
@@ -816,7 +827,7 @@ export default function AdminDashboardPage() {
 
         <aside className={`${mobileMenuOpen ? "absolute inset-0 z-20 flex" : "hidden"} w-64 shrink-0 flex-col border-r border-white/[.06] bg-[#171820] p-5 md:relative md:flex`}>
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="text-xl font-black tracking-tight text-[#eaf2f1]">MidiFlow</Link>
+            <Link href="/dashboard" className="flex items-center gap-2 text-xl font-black tracking-tight text-white"><Image src="/midiflow-logo.svg" alt="" width={22} height={22} />MidiFlow</Link>
             <button type="button" onClick={() => setMobileMenuOpen(false)} className="grid size-8 place-items-center rounded-lg bg-white/[.06] md:hidden" aria-label="Close admin navigation"><X className="size-4" /></button>
           </div>
           <p className="mt-10 text-[10px] font-bold uppercase tracking-[.2em] text-[#707581]">Workspace</p>
@@ -844,9 +855,9 @@ export default function AdminDashboardPage() {
         <section className="p-4 md:p-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">{activeMenu.label}</p>
+              <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">{contentMenu.label}</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight">{activeTab.label}</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-[#aaa3bd]">{activeTab.description ?? activeMenu.description}</p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-[#aaa3bd]">{activeTab.description ?? contentMenu.description}</p>
             </div>
             {activeTab.mode === "collection" && activeTab.editable !== false ? (
               <button type="button" onClick={() => { setEditing(null); setPayload("{}"); }} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold">
@@ -857,8 +868,8 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
-            {activeMenu.tabs.map((tab) => (
-              <Link key={tab.key} href={routeFor(activeMenu, tab)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${tab.key === activeTab.key ? "bg-white text-black" : "border border-white/10 bg-white/[.03] text-[#d2cde0] hover:bg-white/[.07] hover:text-white"}`}>
+            {contentMenu.tabs.map((tab) => (
+              <Link key={tab.key} href={routeFor(contentMenu, tab)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${tab.key === activeTab.key ? "bg-white text-black" : "border border-white/10 bg-white/[.03] text-[#d2cde0] hover:bg-white/[.07] hover:text-white"}`}>
                 {tab.label}
               </Link>
             ))}
