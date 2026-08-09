@@ -13,7 +13,7 @@ import {
   Trash2,
   Waves,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { useMembership } from "@/features/billing/use-membership";
@@ -128,10 +128,6 @@ function levelFromSamples(data: Uint8Array) {
   return Math.min(1, Math.sqrt(sum / data.length) * 3.2);
 }
 
-function formatResetDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(value));
-}
-
 export default function VoiceToMidiPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authResolved, setAuthResolved] = useState(false);
@@ -180,12 +176,9 @@ export default function VoiceToMidiPage() {
 
   const scrollToLatest = () => voiceScrollRef.current?.scrollTo({ top: voiceScrollRef.current.scrollHeight, behavior: "smooth" });
 
-  const creditLabel = useMemo(() => {
-    if (membership?.credits) return `${membership.credits.balance} Credits`;
-    return "1,500 Credits";
-  }, [membership]);
-  const creditResetLabel = membership?.credits ? formatResetDate(membership.credits.resetsOn) : null;
   const voiceCost = membership?.credits?.voiceToMidiCost ?? 50;
+  const creditLabel = "";
+  const creditResetLabel = null;
 
   useEffect(() => {
     if (!supabase) {

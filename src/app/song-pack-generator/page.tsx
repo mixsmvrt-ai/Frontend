@@ -9,10 +9,6 @@ import { useMembership } from "@/features/billing/use-membership";
 import { supabase } from "@/lib/supabase/browser";
 import { songPacksApi, songPackParts, type SongPackCredits, type SongPackInput, type SongPackListItem, type SongPackPartResult, type SongPackPreviewNote, type SongPackRecord } from "@/services/song-packs";
 
-function formatResetDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(value));
-}
-
 function creditsForSelection(count: number, costs: { single: number; small: number; medium: number; large: number }) {
   if (count <= 1) return costs.single;
   if (count <= 3) return costs.small;
@@ -73,7 +69,7 @@ const defaults: SongPackInput = {
 export default function SongPackGeneratorPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authResolved, setAuthResolved] = useState(false);
-  const { membership } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
+  useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
   const [input, setInput] = useState<SongPackInput>(defaults);
   const [credits, setCredits] = useState<SongPackCredits | null>(null);
   const [recentPacks, setRecentPacks] = useState<SongPackListItem[]>([]);
@@ -167,8 +163,6 @@ export default function SongPackGeneratorPage() {
   }, [authResolved, load]);
 
   const estimatedCost = useMemo(() => credits ? creditsForSelection(input.selectedParts.length, credits.config.costs) : 0, [credits, input.selectedParts.length]);
-  const displayedCredits = credits?.balance ?? 1500;
-  const creditResetLabel = credits?.resetsOn ? formatResetDate(credits.resetsOn) : null;
 
   async function generate() {
     if (!isAuthenticated) {
@@ -272,11 +266,6 @@ export default function SongPackGeneratorPage() {
             <h1 className="mt-3 text-4xl font-black tracking-tight">AI Song Pack Generator</h1>
             <p className="mt-4 max-w-3xl text-[#beb8d1]">Describe the beat you want to build and choose which MIDI parts you want included.</p>
           </div>
-          <div className="border-l border-white/10 pl-5">
-            <p className="text-sm font-semibold text-white">Credits</p>
-            <p className="mt-4 text-4xl font-black">{displayedCredits}</p>
-            <p className="mt-2 text-sm text-[#beb8d1]">{!isAuthenticated ? "Every signed-in account gets 1,500 monthly credits. Song Pack Generator uses 75 credits per generation." : membership?.type === "pro" || membership?.type === "trial" || membership?.type === "admin" ? `Estimated cost for this pack: ${estimatedCost} credits. ${creditResetLabel ? `Credits reset on ${creditResetLabel}.` : ""}` : "Active Pro access is required for Song Pack Generator."}</p>
-          </div>
         </header>
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_.9fr]">
@@ -312,7 +301,6 @@ export default function SongPackGeneratorPage() {
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <button type="button" title="Generate song pack" aria-label="Generate song pack" onClick={() => void generate()} disabled={busy || (isAuthenticated && (loading || !credits?.config.enabled))} className="grid size-11 place-items-center rounded-full bg-violet-600 text-white shadow-[0_0_22px_rgba(139,92,246,.35)] disabled:opacity-60">{busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}</button>
-              <p className="text-sm text-[#aaa3bd]">Song Pack Generator uses {estimatedCost} credits per generation from your 1,500 monthly credits.</p>
             </div>
             {error ? <p className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</p> : null}
           </section>
@@ -330,7 +318,7 @@ export default function SongPackGeneratorPage() {
                 <p className="text-sm font-semibold text-violet-200">Generated pack</p>
                 <h2 className="mt-2 text-3xl font-black text-white">{activePack.title}</h2>
                 <p className="mt-2 text-sm text-[#beb8d1]">{activePack.summary}</p>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#d4cfe0]"><span className="rounded-full bg-white/10 px-3 py-1">{activePack.tempo ?? "Auto"} BPM</span><span className="rounded-full bg-white/10 px-3 py-1">{activePack.key ?? "Auto Key"}</span><span className="rounded-full bg-white/10 px-3 py-1">{activePack.scale ?? "Auto Scale"}</span><span className="rounded-full bg-white/10 px-3 py-1">{activePack.creditsUsed} credits used</span></div>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#d4cfe0]"><span className="rounded-full bg-white/10 px-3 py-1">{activePack.tempo ?? "Auto"} BPM</span><span className="rounded-full bg-white/10 px-3 py-1">{activePack.key ?? "Auto Key"}</span><span className="rounded-full bg-white/10 px-3 py-1">{activePack.scale ?? "Auto Scale"}</span></div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <a href={activePack.download.url} target="_blank" rel="noreferrer" title="Download entire song pack" aria-label="Download entire song pack" className="grid size-10 place-items-center rounded-full bg-violet-600 text-white"><Download className="size-4" /></a>
