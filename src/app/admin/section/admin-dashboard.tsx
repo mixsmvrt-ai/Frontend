@@ -533,10 +533,14 @@ export default function AdminDashboardPage() {
 
   const fetchAdmin = useCallback(async (path: string, authUserId: string, search?: URLSearchParams) => {
     const suffix = search && search.size ? `?${search.toString()}` : "";
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
     const response = await fetch(`${apiBase}${path}${suffix}`, {
       headers: { "x-user-id": authUserId },
       credentials: "include",
+      signal: controller.signal,
     });
+    window.clearTimeout(timeout);
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(typeof body.error === "string" ? body.error : "Administrator access required.");
     return body;
@@ -575,26 +579,25 @@ export default function AdminDashboardPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
-    const authUser = await getAuthUser();
-    if (!authUser) {
-      setError("Authentication is required.");
-      setLoading(false);
-      return;
-    }
-
-    setUserId(authUser.id);
-    setUserEmail(authUser.email ?? "admin@midiflow");
-    setDashboard(null);
-    setRows([]);
-    setUsers([]);
-    setMembershipOverview(null);
-    setMembershipUsers([]);
-    setAiOverview(null);
-    setSongPackOverview(null);
-    setReferralOverview(null);
-    setReferralSettings(null);
-
     try {
+      const authUser = await getAuthUser();
+      if (!authUser) {
+        setError("Authentication is required.");
+        return;
+      }
+
+      setUserId(authUser.id);
+      setUserEmail(authUser.email ?? "admin@midiflow");
+      setDashboard(null);
+      setRows([]);
+      setUsers([]);
+      setMembershipOverview(null);
+      setMembershipUsers([]);
+      setAiOverview(null);
+      setSongPackOverview(null);
+      setReferralOverview(null);
+      setReferralSettings(null);
+
       if (activeTab.mode === "dashboard") {
         await loadDashboard(authUser.id);
       } else if (activeTab.mode === "users") {
