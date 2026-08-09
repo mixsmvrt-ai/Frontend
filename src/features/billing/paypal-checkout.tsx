@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { authHeaders } from "@/services/api";
 
@@ -28,13 +29,13 @@ function paypalScriptUrl(clientId: string) {
 }
 
 export function PayPalCheckout({ mode = "upgrade", plan = "plus" }: { mode?: "upgrade" | "renew"; plan?: "go" | "plus" }) {
-	const paypalTarget = useRef<HTMLDivElement>(null);
-	const cardTarget = useRef<HTMLDivElement>(null);
+	const buttonTarget = useRef<HTMLDivElement>(null);
+	const [fundingSource, setFundingSource] = useState<PayPalFundingSource>("card");
 	const [error, setError] = useState("");
 
 	useEffect(() => {
 		const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
-		if (!clientId || !paypalTarget.current || !cardTarget.current) {
+		if (!clientId || !buttonTarget.current) {
 			setError("PayPal checkout is unavailable for this environment.");
 			return;
 		}
@@ -68,35 +69,20 @@ export function PayPalCheckout({ mode = "upgrade", plan = "plus" }: { mode?: "up
 		};
 
 		const renderButtons = () => {
-			if (!window.paypal || cancelled || !paypalTarget.current || !cardTarget.current) return;
+			if (!window.paypal || cancelled || !buttonTarget.current) return;
 
-			paypalTarget.current.innerHTML = "";
-			cardTarget.current.innerHTML = "";
-
-			const paypalButton = window.paypal.Buttons({
-				fundingSource: window.paypal.FUNDING.PAYPAL,
-				style: { color: "gold", shape: "rect", height: 44, layout: "vertical", label: "paypal", tagline: false },
+			buttonTarget.current.innerHTML = "";
+			const button = window.paypal.Buttons({
+				fundingSource: fundingSource === "paypal" ? window.paypal.FUNDING.PAYPAL : window.paypal.FUNDING.CARD,
+				style: { color: fundingSource === "paypal" ? "gold" : "black", shape: "rect", height: 48, layout: "vertical", label: fundingSource === "paypal" ? "paypal" : "pay", tagline: false },
 				createOrder,
 				onApprove: async ({ orderID }) => captureOrder(orderID),
 				onError: handleError,
 				onCancel: () => window.location.assign("/billing/cancelled"),
 			});
 
-			const cardButton = window.paypal.Buttons({
-				fundingSource: window.paypal.FUNDING.CARD,
-				style: { color: "black", shape: "rect", height: 48, layout: "vertical", label: "pay", tagline: false },
-				createOrder,
-				onApprove: async ({ orderID }) => captureOrder(orderID),
-				onError: handleError,
-				onCancel: () => window.location.assign("/billing/cancelled"),
-			});
-
-			if (paypalButton.isEligible?.() !== false) {
-				void paypalButton.render(paypalTarget.current);
-			}
-
-			if (cardButton.isEligible?.() !== false) {
-				void cardButton.render(cardTarget.current);
+			if (button.isEligible?.() !== false) {
+				void button.render(buttonTarget.current);
 			}
 		};
 
@@ -120,19 +106,33 @@ export function PayPalCheckout({ mode = "upgrade", plan = "plus" }: { mode?: "up
 		return () => {
 			cancelled = true;
 		};
-	}, [mode, plan]);
+	}, [fundingSource, mode, plan]);
 
 	if (error) {
 		return <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</p>;
 	}
 
 	return (
-		<div className="rounded-[28px] border border-white/10 bg-[#1f1f1f] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,.03)]">
-			<div className="overflow-hidden rounded-[22px] border border-white/10 bg-[#262626] p-3">
-				<div ref={paypalTarget} />
-				<div className="mt-3" ref={cardTarget} />
+		<div className="rounded-2xl border border-white/10 bg-[#151a29] p-4 shadow-[0_20px_55px_rgba(3,7,18,.3)]">
+			<div className="flex items-center justify-between gap-4">
+				<div>
+					<p className="text-sm font-semibold text-white">Payment method</p>
+					<p className="mt-1 text-xs text-[#9ca4b8]">Secure checkout powered by PayPal</p>
+				</div>
+				<span className="text-xs text-[#9ca4b8]">Step 2 of 2</span>
 			</div>
-			<p className="mt-3 text-center text-xs text-[#aaa3bd]">Choose PayPal or pay by debit or credit card through PayPal&apos;s secure checkout.</p>
+			<div className="mt-4 grid grid-cols-2 gap-3">
+				<button type="button" onClick={() => setFundingSource("card")} className={`rounded-xl border p-3 text-left transition ${fundingSource === "card" ? "border-violet-400 bg-violet-500/10" : "border-white/10 bg-white/[.03] hover:border-white/25"}`} aria-pressed={fundingSource === "card"}>
+					<span className="flex items-center gap-2 text-sm font-semibold text-white"><span className="grid size-6 place-items-center rounded-md bg-white/10"><CreditCard className="size-3.5" /></span>Debit / credit card</span>
+					<span className="mt-1 block text-xs text-[#9ca4b8]">Pay securely with PayPal</span>
+				</button>
+				<button type="button" onClick={() => setFundingSource("paypal")} className={`rounded-xl border p-3 text-left transition ${fundingSource === "paypal" ? "border-violet-400 bg-violet-500/10" : "border-white/10 bg-white/[.03] hover:border-white/25"}`} aria-pressed={fundingSource === "paypal"}>
+					<span className="flex items-center gap-2 text-sm font-semibold text-white"><span className="grid size-6 place-items-center rounded-md bg-[#147bd1] text-xs font-black italic">P</span>PayPal</span>
+					<span className="mt-1 block text-xs text-[#9ca4b8]">Log in to PayPal</span>
+				</button>
+			</div>
+			<div className="mt-4 rounded-xl border border-white/10 bg-[#202636] p-3" ref={buttonTarget} />
+			<p className="mt-3 text-center text-xs text-[#9ca4b8]">Your payment details are handled securely by PayPal.</p>
 		</div>
 	);
 }
