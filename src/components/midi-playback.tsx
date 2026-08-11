@@ -64,15 +64,16 @@ export function MidiPlayback({ url, onRequestUrl, prompt, kind, fileName }: { ur
     }
 
     setLoading(true);
+    const context = contextRef.current ?? new AudioContext();
+    contextRef.current = context;
     try {
+      // Start/resume immediately from the user gesture before network requests.
+      await context.resume();
       const resolvedUrl = url ?? await onRequestUrl?.();
       if (!resolvedUrl) throw new Error("The MIDI export is not available yet.");
       const response = await fetch(resolvedUrl);
       if (!response.ok) throw new Error("The MIDI file could not be loaded.");
       const midi = new Midi(await response.arrayBuffer());
-      const context = contextRef.current ?? new AudioContext();
-      contextRef.current = context;
-      await context.resume();
       const profile = closestPlaybackProfile(prompt ?? fileName, kind);
       const sampleResponse = await fetch(SAMPLE_FILE[profile]);
       if (!sampleResponse.ok) throw new Error("The reference sound could not be loaded.");
