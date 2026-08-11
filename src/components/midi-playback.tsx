@@ -15,12 +15,18 @@ const SAMPLE_ROOT: Record<PlaybackProfile, number> = {
 };
 
 const SAMPLE_FILE: Record<PlaybackProfile, string> = {
-  "808": "/sounds/808.wav",
-  bass: "/sounds/Bass.wav",
-  guitar: "/sounds/Nylon%20Guitar.wav",
-  bell: "/sounds/Soft%20Bell.wav",
-  piano: "/sounds/Soft%20Piano.wav",
+  "808": "808.wav",
+  bass: "Bass.wav",
+  guitar: "Nylon Guitar.wav",
+  bell: "Soft Bell.wav",
+  piano: "Soft Piano.wav",
 };
+
+function sampleUrl(profile: PlaybackProfile) {
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!baseUrl) return `/sounds/${encodeURIComponent(SAMPLE_FILE[profile])}`;
+  return `${baseUrl.replace(/\/$/, "")}/storage/v1/object/public/preview-sounds/${encodeURIComponent(SAMPLE_FILE[profile])}`;
+}
 
 export function closestPlaybackProfile(prompt: string, kind?: string): PlaybackProfile {
   const text = `${prompt} ${kind ?? ""}`.toLowerCase();
@@ -75,7 +81,7 @@ export function MidiPlayback({ url, onRequestUrl, prompt, kind, fileName }: { ur
       if (!response.ok) throw new Error("The MIDI file could not be loaded.");
       const midi = new Midi(await response.arrayBuffer());
       const profile = closestPlaybackProfile(prompt ?? fileName, kind);
-      const sampleResponse = await fetch(SAMPLE_FILE[profile]);
+      const sampleResponse = await fetch(sampleUrl(profile));
       if (!sampleResponse.ok) throw new Error("The reference sound could not be loaded.");
       const sample = await context.decodeAudioData(await sampleResponse.arrayBuffer());
       const output = context.createGain();
