@@ -31,6 +31,8 @@ export interface ProjectConversationResult {
 	message?: ProjectConversationAssistantReply;
 	recommendedDelayMs?: number;
 }
+export interface PromptRefinementQuestion { id: "mood" | "instrument" | "tempo" | "energy" | "density" | "complexity" | "include"; label: string; prompt: string; options: string[]; }
+export interface PromptRefinementResult { confidence: number; shouldGenerate: boolean; intro: string; questions: PromptRefinementQuestion[]; detected: Record<string, string | number | undefined>; }
 
 export const projectsApi = {
 	list: (query = "", sort: "updated_at" | "created_at" = "updated_at") => request<{ data: ProjectRecord[] }>(`/projects?query=${encodeURIComponent(query)}&sort=${sort}`),
@@ -43,4 +45,5 @@ export const projectsApi = {
 	duplicate: (id: string) => request<{ data: { id: string } }>(`/projects/${encodeURIComponent(id)}/duplicate`, { method: "POST" }),
 	messages: (id: string) => request<{ data: ProjectMessage[] }>(`/projects/${encodeURIComponent(id)}/messages`),
 	createMessage: (id: string, input: { content: string; generation?: { kind?: "melody" | "chords" | "counter_melody" | "bassline" | "drums" | "full_composition"; key?: string; scale?: "major" | "minor"; tempo?: number; lengthBars?: number; complexity?: "low" | "medium" | "high"; variationAmount?: number; timeSignature?: [number, number] } }) => request<{ data: ProjectConversationResult }>(`/projects/${encodeURIComponent(id)}/messages`, { method: "POST", body: JSON.stringify(input) }),
+	refine: (id: string, input: { prompt: string; kind?: string }) => request<{ data: PromptRefinementResult }>(`/projects/${encodeURIComponent(id)}/refine`, { method: "POST", body: JSON.stringify(input) }),
 };

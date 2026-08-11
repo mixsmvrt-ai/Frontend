@@ -9,6 +9,7 @@ import { MidiPlayback } from "@/components/midi-playback";
 import { useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { useMembership } from "@/features/billing/use-membership";
 import { projectsApi } from "@/services/projects";
+import type { PromptRefinementQuestion } from "@/services/projects";
 
 const keys = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
 const processingSteps = [
@@ -19,13 +20,20 @@ const processingSteps = [
 ] as const;
 
 export interface ComposerReplyState {
-  status: "processing" | "completed";
+  status: "processing" | "refining" | "completed";
   prompt: string;
   activeStep: number;
   steps: ReadonlyArray<{ title: string; detail: string }>;
   fileName?: string;
   downloadUrl?: string;
   generationId?: string;
+  questions?: PromptRefinementQuestion[];
+  refinementIndex?: number;
+  refinementAnswers?: Array<{ category: string; value: string }>;
+  kind?: ComposerSubmitInput["kind"];
+  key?: string;
+  scale?: ComposerSubmitInput["scale"];
+  tempo?: number;
 }
 
 export interface ComposerSubmitInput {

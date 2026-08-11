@@ -9,7 +9,7 @@ import { MidiPlayback } from "@/components/midi-playback";
 import { promptSignIn, useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { GenerationComposer, type ComposerReplyState, type ComposerSubmitInput } from "@/features/generation/generation-composer";
 import { favoriteGeneration, generateMusic, generationExports, readGeneration, regenerateGeneration, type GenerationFile, type GenerationRecord } from "@/services/generations";
-import { projectsApi, type ProjectMessage } from "@/services/projects";
+import { projectsApi, type ProjectMessage, type PromptRefinementQuestion } from "@/services/projects";
 import { workspaceApi } from "@/services/workspace";
 
 type GenerationMap = Record<string, GenerationRecord>;
@@ -305,14 +305,26 @@ export default function ProjectPage() {
 
     setPendingPrompt(input.prompt);
     setAssistantTyping(false);
-    setComposerReply({
-      status: "processing",
-      prompt: input.prompt,
-      activeStep: 0,
-      steps: generationProcessingSteps,
-    });
-
     try {
+      const refinement = await projectsApi.refine(projectId, { prompt: input.prompt, kind: input.kind });
+      if (!refinement.data.shouldGenerate && refinement.data.questions.length) {
+        setComposerReply({
+          status: "refining",
+          prompt: input.prompt,
+          activeStep: 0,
+          steps: generationProcessingSteps,
+          questions: refinement.data.questions,
+          refinementIndex: 0,
+          refinementAnswers: [],
+          kind: input.kind,
+          key: input.key,
+          scale: input.scale,
+          tempo: input.tempo,
+        });
+        return;
+      }
+
+      setComposerReply({ status: "processing", prompt: input.prompt, activeStep: 0, steps: generationProcessingSteps });
       const result = await projectsApi.createMessage(projectId, {
         content: input.prompt,
         ...(input.kind ? {
@@ -349,6 +361,41 @@ export default function ProjectPage() {
       throw error;
     }
   }, [isAuthenticated, loadMessages, projectId]);
+
+  const answerRefinement = useCallback(async (question: PromptRefinementQuestion, value: string) => {
+    if (!composerReply || composerReply.status !== "refining") return;
+    const answers = [...(composerReply.refinementAnswers ?? []), { category: question.id, value }];
+    const nextIndex = (composerReply.refinementIndex ?? 0) + 1;
+    if (nextIndex < (composerReply.questions?.length ?? 0)) {
+      setComposerReply({ ...composerReply, refinementIndex: nextIndex, refinementAnswers: answers });
+      return;
+    }
+
+    setComposerReply({ status: "processing", prompt: composerReply.prompt, activeStep: 0, steps: generationProcessingSteps });
+    try {
+      const selectedTempo = answers.find((answer) => answer.category === "tempo")?.value.match(/\d+/)?.[0];
+      const generation = await projectsApi.createMessage(projectId, {
+        content: `${composerReply.prompt}\n\nProducer decisions: ${answers.map((answer) => `${answer.category}=${answer.value}`).join("; ")}`,
+        generation: {
+          kind: composerReply.kind ?? "full_composition",
+          tempo: selectedTempo ? Number(selectedTempo) : composerReply.tempo,
+          key: composerReply.key,
+          scale: composerReply.scale,
+          lengthBars: 8,
+          complexity: "medium",
+          variationAmount: 0.5,
+          timeSignature: [4, 4],
+        },
+      });
+      if (generation.data.mode === "generation") await loadMessages();
+      setComposerReply(null);
+      setPendingPrompt(null);
+    } catch (error) {
+      setComposerReply(null);
+      setPendingPrompt(null);
+      throw error;
+    }
+  }, [composerReply, loadMessages, projectId]);
 
   useEffect(() => {
     const prompt = searchParams.get("prompt")?.trim();
@@ -461,6 +508,14 @@ export default function ProjectPage() {
                       <span className="size-2 animate-pulse rounded-full bg-violet-300" />
                       <span className="size-2 animate-pulse rounded-full bg-violet-300 [animation-delay:150ms]" />
                       <span className="size-2 animate-pulse rounded-full bg-violet-300 [animation-delay:300ms]" />
+                    </div>
+                  </>
+                ) : composerReply.status === "refining" ? (
+                  <>
+                    <p className="font-medium text-white">{composerReply.questions?.[composerReply.refinementIndex ?? 0]?.prompt}</p>
+                    <p className="mt-1 text-xs text-[#a9a4b9]">{composerReply.questions?.[composerReply.refinementIndex ?? 0]?.label} · quick producer check</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {composerReply.questions?.[composerReply.refinementIndex ?? 0]?.options.map((option) => <button key={option} type="button" onClick={() => void answerRefinement(composerReply.questions![composerReply.refinementIndex ?? 0], option)} className="rounded-full border border-violet-300/25 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-100 transition hover:border-violet-300/60 hover:bg-violet-500/20">{option}</button>)}
                     </div>
                   </>
                 ) : (
