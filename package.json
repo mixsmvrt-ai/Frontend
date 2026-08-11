@@ -12,6 +12,7 @@
     "@hookform/resolvers": "^5.0.1",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.1",
+    "@tonejs/midi": "^2.0.28",
     "framer-motion": "^12.9.2",
     "lucide-react": "^1.25.0",
     "motion-dom": "12.42.2",
