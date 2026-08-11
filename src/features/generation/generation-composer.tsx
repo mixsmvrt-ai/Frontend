@@ -34,6 +34,8 @@ export interface ComposerReplyState {
   key?: string;
   scale?: ComposerSubmitInput["scale"];
   tempo?: number;
+  stage?: "refinement" | "next-part";
+  generatedParts?: string[];
 }
 
 export interface ComposerSubmitInput {

@@ -20,11 +20,12 @@ import { MidiPlayback } from "@/components/midi-playback";
 import { useMembership } from "@/features/billing/use-membership";
 import { supabase } from "@/lib/supabase/browser";
 import { generateMusic } from "@/services/generations";
-import { projectsApi } from "@/services/projects";
+import { projectsApi, type PromptRefinementQuestion } from "@/services/projects";
 import { analyzeVoice, interpretVoice, processVoice, startVoiceUpload, uploadVoiceFile, type MusicInterpretationRecord } from "@/services/voice";
 
 type VoicePipelineStep = "Record or upload" | "Analyze notes" | "Generate MIDI";
 const lockThresholdPx = 90;
+const producerParts = ["Chords", "Chords + Melody", "Melody", "Lead", "Bass", "808", "Drums"];
 
 function projectTitleFromFile(fileName: string) {
   const base = fileName.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
@@ -149,6 +150,7 @@ export default function VoiceToMidiPage() {
   const [statusLabel, setStatusLabel] = useState<VoicePipelineStep | "Ready" | "Waiting">("Waiting");
   const [prompt, setPrompt] = useState("");
   const [conversation, setConversation] = useState<Array<{ role: "user" | "assistant"; content: string; fileName?: string; audioUrl?: string }>>([]);
+  const [voiceRefinement, setVoiceRefinement] = useState<{ projectId: string; prompt: string; questions: PromptRefinementQuestion[]; index: number; answers: Array<{ category: string; value: string }>; hints: MusicInterpretationRecord["interpretation"]["musicBrainHints"]; stage?: "first" | "next"; generatedParts?: string[] } | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -545,6 +547,13 @@ export default function VoiceToMidiPage() {
       setStatusLabel("Generate MIDI");
       const prompt = buildPrompt(interpreted.data.interpretation, enhanceMelody);
       const hints = interpreted.data.interpretation.musicBrainHints;
+            const refinement = await projectsApi.refine(projectId, { prompt, kind: "full_composition" });
+            if (!refinement.data.shouldGenerate && refinement.data.questions.length) {
+              setVoiceRefinement({ projectId, prompt, questions: refinement.data.questions, index: 0, answers: [], hints });
+              setStatusLabel("Ready");
+              return;
+            }
+
       const generation = await generateMusic({
         prompt,
         kind: "full_composition",
@@ -565,6 +574,87 @@ export default function VoiceToMidiPage() {
       setStatusLabel("Ready");
       setConversation((current) => [...current, { role: "assistant", content: `I converted your recording into a MIDI idea at ${generation.tempo} BPM.`, fileName: generation.fileName }]);
       discardRecording();
+      toast.success("Voice-to-MIDI pipeline completed.");
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "Voice-to-MIDI failed.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const answerVoiceRefinement = async (question: PromptRefinementQuestion, value: string) => {
+    if (!voiceRefinement || busy) return;
+    if (voiceRefinement.stage === "next") {
+      if (value === "Done") {
+        setVoiceRefinement(null);
+        return;
+      }
+      setBusy(true);
+      try {
+        const generation = await generateMusic({
+          prompt: `${voiceRefinement.prompt}\n\nContinue the same project. Build the next layer: ${value}. Keep existing generated parts compatible and do not replace them.`,
+          kind: value === "Chords" ? "chords" : value === "Drums" ? "drums" : value === "Bass" || value === "808" ? "bassline" : value === "Melody" || value === "Lead" ? "melody" : "full_composition",
+          projectId: voiceRefinement.projectId,
+          workflow: "voice_to_midi",
+          tempo: voiceRefinement.hints.tempo ?? undefined,
+          genre: voiceRefinement.hints.genre ?? undefined,
+          mood: voiceRefinement.hints.mood ?? undefined,
+          key: voiceRefinement.hints.key ?? undefined,
+          scale: voiceRefinement.hints.scale?.toLowerCase() ?? undefined,
+          lengthBars: 16,
+          complexity: enhanceMelody ? "medium" : "low",
+          variationAmount: enhanceMelody ? 0.48 : 0.2,
+          timeSignature: [4, 4],
+        });
+        setDownloadUrl(generation.midiFileUrl);
+        setConversation((current) => [...current, { role: "assistant", content: `I added a ${value} layer at ${generation.tempo} BPM.`, fileName: generation.fileName }]);
+        const generatedParts = [...(voiceRefinement.generatedParts ?? []), value];
+        const remaining = producerParts.filter((part) => !generatedParts.includes(part) && part !== "Chords + Melody");
+        setVoiceRefinement(remaining.length ? { ...voiceRefinement, questions: [{ id: "part", label: "Build next", prompt: "What should I build next?", options: ["Done", ...remaining] }], index: 0, answers: [], stage: "next", generatedParts } : null);
+      } catch (reason) {
+        const message = reason instanceof Error ? reason.message : "Voice-to-MIDI failed.";
+        setError(message);
+        toast.error(message);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    const answers = [...voiceRefinement.answers, { category: question.id, value }];
+    const nextIndex = voiceRefinement.index + 1;
+    if (nextIndex < voiceRefinement.questions.length) {
+      setVoiceRefinement({ ...voiceRefinement, index: nextIndex, answers });
+      return;
+    }
+    setBusy(true);
+    const originalRefinement = voiceRefinement;
+    setVoiceRefinement(null);
+    try {
+      setStatusLabel("Generate MIDI");
+      const selectedPart = answers.find((answer) => answer.category === "part")?.value;
+      const selectedTempo = answers.find((answer) => answer.category === "tempo")?.value.match(/\d+/)?.[0];
+      const generation = await generateMusic({
+        prompt: `${voiceRefinement.prompt}\n\nBuild this first: ${selectedPart ?? "the requested part"}. Producer decisions: ${answers.map((answer) => `${answer.category}=${answer.value}`).join("; ")}`,
+        kind: selectedPart === "Chords" ? "chords" : selectedPart === "Drums" ? "drums" : selectedPart === "Bass" || selectedPart === "808" ? "bassline" : selectedPart === "Melody" || selectedPart === "Lead" ? "melody" : "full_composition",
+        projectId: voiceRefinement.projectId,
+        workflow: "voice_to_midi",
+        tempo: selectedTempo ? Number(selectedTempo) : voiceRefinement.hints.tempo ?? undefined,
+        genre: voiceRefinement.hints.genre ?? undefined,
+        mood: voiceRefinement.hints.mood ?? undefined,
+        key: voiceRefinement.hints.key ?? undefined,
+        scale: voiceRefinement.hints.scale?.toLowerCase() ?? undefined,
+        lengthBars: 16,
+        complexity: enhanceMelody ? "medium" : "low",
+        variationAmount: enhanceMelody ? 0.48 : 0.2,
+        timeSignature: [4, 4],
+      });
+      setDownloadUrl(generation.midiFileUrl);
+      setConversation((current) => [...current, { role: "assistant", content: `I converted your recording into a ${selectedPart ?? "MIDI"} idea at ${generation.tempo} BPM.`, fileName: generation.fileName }]);
+      const generated = selectedPart ?? "Melody";
+      const remaining = producerParts.filter((part) => part !== generated && part !== "Chords + Melody");
+      setVoiceRefinement(remaining.length ? { ...originalRefinement, questions: [{ id: "part", label: "Build next", prompt: "What should I build next?", options: ["Done", ...remaining] }], index: 0, answers: [], stage: "next", generatedParts: [generated] } : null);
       toast.success("Voice-to-MIDI pipeline completed.");
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "Voice-to-MIDI failed.";
@@ -615,6 +705,7 @@ export default function VoiceToMidiPage() {
             {busy ? <div className="flex items-start gap-3"><div className="grid size-9 shrink-0 place-items-center rounded-full border border-violet-400/30 bg-violet-500/10 text-violet-300"><Music4 className="size-4" /></div><div className="rounded-2xl rounded-tl-md border border-white/[.08] bg-[#151821] px-4 py-3"><div className="flex items-center gap-1.5" aria-label="MidiFlow AI is processing"><span className="size-2 animate-bounce rounded-full bg-violet-300" /><span className="size-2 animate-bounce rounded-full bg-violet-300 [animation-delay:150ms]" /><span className="size-2 animate-bounce rounded-full bg-violet-300 [animation-delay:300ms]" /></div></div></div> : null}
             {file ? <div className="rounded-xl border border-white/[.08] bg-[#151821] p-3 text-xs text-[#bdb9c8]">Audio ready: <span className="text-white">{file.name}</span><span className="ml-2 text-violet-300">{recording ? `Recording ${formatTimer(recordingSeconds)}` : statusLabel}</span></div> : null}
             {interpretation ? <div className="rounded-xl border border-white/[.08] bg-[#151821] p-4 text-sm text-[#d6d1df]"><p className="font-semibold text-white">Detected idea</p><p className="mt-2 text-xs leading-5 text-[#a5a1b0]">{interpretation.interpretation.musicalSummary.concise}</p><p className="mt-3 text-xs text-violet-300">{interpretation.interpretation.genreConfidence[0]?.genre ?? "Contemporary"} · {interpretation.interpretation.emotion.primary} · {interpretation.interpretation.keyAnalysis.currentKey ?? "Auto key"}</p></div> : null}
+            {voiceRefinement ? <div className="rounded-xl border border-violet-300/20 bg-[#151821] p-4 text-sm text-[#d6d1df]"><p className="font-semibold text-white">{voiceRefinement.questions[voiceRefinement.index]?.prompt}</p><p className="mt-1 text-xs text-[#a5a1b0]">{voiceRefinement.questions[voiceRefinement.index]?.label} · quick producer check</p><div className="mt-3 flex flex-wrap gap-2">{voiceRefinement.questions[voiceRefinement.index]?.options.map((option) => <button key={option} type="button" onClick={() => void answerVoiceRefinement(voiceRefinement.questions[voiceRefinement.index], option)} className="rounded-full border border-violet-300/25 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-100 transition hover:border-violet-300/60 hover:bg-violet-500/20">{option}</button>)}</div></div> : null}
             {error ? <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</p> : null}
           </div>
         </div>

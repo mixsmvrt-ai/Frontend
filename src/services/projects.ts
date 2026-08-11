@@ -31,7 +31,7 @@ export interface ProjectConversationResult {
 	message?: ProjectConversationAssistantReply;
 	recommendedDelayMs?: number;
 }
-export interface PromptRefinementQuestion { id: "mood" | "instrument" | "tempo" | "energy" | "density" | "complexity" | "include"; label: string; prompt: string; options: string[]; }
+export interface PromptRefinementQuestion { id: "part" | "mood" | "instrument" | "tempo" | "energy" | "density" | "complexity" | "include"; label: string; prompt: string; options: string[]; }
 export interface PromptRefinementResult { confidence: number; shouldGenerate: boolean; intro: string; questions: PromptRefinementQuestion[]; detected: Record<string, string | number | undefined>; }
 
 export const projectsApi = {

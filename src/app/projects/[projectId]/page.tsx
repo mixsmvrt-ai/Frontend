@@ -17,6 +17,7 @@ type ExportMap = Record<string, GenerationFile[]>;
 type PendingMap = Record<string, "download" | "regenerate" | "variation" | "favorite">;
 
 const generationKinds = ["melody", "chords", "counter_melody", "bassline", "drums", "full_composition"] as const;
+const producerParts = ["Chords", "Chords + Melody", "Melody", "Lead", "Bass", "808", "Drums"];
 
 const generationProcessingSteps = [
   { title: "Analyzing prompt", detail: "Reading the mood, key, and arrangement cues." },
@@ -41,6 +42,14 @@ function triggerDownload(url: string, fileName: string) {
   document.body.append(link);
   link.click();
   link.remove();
+}
+
+function kindForPart(part: string): ComposerSubmitInput["kind"] {
+  if (part === "Chords") return "chords";
+  if (part === "Melody" || part === "Lead") return "melody";
+  if (part === "Bass" || part === "808") return "bassline";
+  if (part === "Drums") return "drums";
+  return "full_composition";
 }
 
 export default function ProjectPage() {
@@ -320,6 +329,7 @@ export default function ProjectPage() {
           key: input.key,
           scale: input.scale,
           tempo: input.tempo,
+          stage: "refinement",
         });
         return;
       }
@@ -364,6 +374,27 @@ export default function ProjectPage() {
 
   const answerRefinement = useCallback(async (question: PromptRefinementQuestion, value: string) => {
     if (!composerReply || composerReply.status !== "refining") return;
+    if (composerReply.stage === "next-part") {
+      if (value === "Done") {
+        setComposerReply(null);
+        return;
+      }
+      setComposerReply({ ...composerReply, status: "processing" });
+      try {
+        await projectsApi.createMessage(projectId, {
+          content: `${composerReply.prompt}\n\nContinue the same project. Build the next layer: ${value}. Keep existing generated parts compatible and do not replace them.`,
+          generation: { kind: kindForPart(value), key: composerReply.key, scale: composerReply.scale, tempo: composerReply.tempo, lengthBars: 8, complexity: "medium", variationAmount: 0.5, timeSignature: [4, 4] },
+        });
+        await loadMessages();
+        const generatedParts = [...(composerReply.generatedParts ?? []), value];
+        const remaining = producerParts.filter((part) => !generatedParts.includes(part) && part !== "Chords + Melody");
+        setComposerReply(remaining.length ? { ...composerReply, status: "refining", stage: "next-part", questions: [{ id: "part", label: "Build next", prompt: "What should I build next?", options: ["Done", ...remaining] }], refinementIndex: 0, refinementAnswers: [], generatedParts } : null);
+        return;
+      } catch (error) {
+        setComposerReply(null);
+        throw error;
+      }
+    }
     const answers = [...(composerReply.refinementAnswers ?? []), { category: question.id, value }];
     const nextIndex = (composerReply.refinementIndex ?? 0) + 1;
     if (nextIndex < (composerReply.questions?.length ?? 0)) {
@@ -373,11 +404,12 @@ export default function ProjectPage() {
 
     setComposerReply({ status: "processing", prompt: composerReply.prompt, activeStep: 0, steps: generationProcessingSteps });
     try {
+      const selectedPart = answers.find((answer) => answer.category === "part")?.value;
       const selectedTempo = answers.find((answer) => answer.category === "tempo")?.value.match(/\d+/)?.[0];
       const generation = await projectsApi.createMessage(projectId, {
-        content: `${composerReply.prompt}\n\nProducer decisions: ${answers.map((answer) => `${answer.category}=${answer.value}`).join("; ")}`,
+        content: `${composerReply.prompt}\n\nBuild this first: ${selectedPart ?? "the requested part"}.\nProducer decisions: ${answers.map((answer) => `${answer.category}=${answer.value}`).join("; ")}`,
         generation: {
-          kind: composerReply.kind ?? "full_composition",
+          kind: selectedPart ? kindForPart(selectedPart) : composerReply.kind ?? "full_composition",
           tempo: selectedTempo ? Number(selectedTempo) : composerReply.tempo,
           key: composerReply.key,
           scale: composerReply.scale,
@@ -388,7 +420,8 @@ export default function ProjectPage() {
         },
       });
       if (generation.data.mode === "generation") await loadMessages();
-      setComposerReply(null);
+      const generated = selectedPart ?? (composerReply.kind === "chords" ? "Chords" : composerReply.kind === "drums" ? "Drums" : "Melody");
+      setComposerReply({ ...composerReply, status: "refining", stage: "next-part", questions: [{ id: "part", label: "Build next", prompt: "Nice. What should I build next?", options: ["Done", ...producerParts.filter((part) => part !== generated && part !== "Chords + Melody")] }], refinementIndex: 0, refinementAnswers: [], generatedParts: [generated] });
       setPendingPrompt(null);
     } catch (error) {
       setComposerReply(null);
