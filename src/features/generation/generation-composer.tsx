@@ -5,6 +5,7 @@ import { ArrowUp, CircleDashed, Download, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { MidiPlayback } from "@/components/midi-playback";
 import { useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { useMembership } from "@/features/billing/use-membership";
 import { projectsApi } from "@/services/projects";
@@ -346,7 +347,10 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
             </>
           ) : (
             <>
-              <p className="truncate font-medium text-white">{localReplyState.fileName ?? "MIDI file ready"}</p>
+              <div className="flex items-center gap-2">
+                <MidiPlayback url={localReplyState.downloadUrl} prompt={localReplyState.prompt} kind={kind} fileName={localReplyState.fileName ?? "MIDI file ready"} />
+                <p className="truncate font-medium text-white">{localReplyState.fileName ?? "MIDI file ready"}</p>
+              </div>
               {localReplyState.downloadUrl && localReplyState.fileName ? (
                 <button type="button" title="Download MIDI" aria-label="Download MIDI" onClick={() => downloadFile(localReplyState.downloadUrl!, localReplyState.fileName!)} className="mt-3 grid size-9 place-items-center rounded-full border border-white/10 bg-white/[.03] text-white transition hover:bg-white/[.08]">
                   <Download className="size-3.5" />

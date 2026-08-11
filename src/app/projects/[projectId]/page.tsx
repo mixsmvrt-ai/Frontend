@@ -5,6 +5,7 @@ import { ArrowDown, Bot, Check, CircleDashed, Download, Heart, Loader2, Music2, 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { MidiPlayback } from "@/components/midi-playback";
 import { promptSignIn, useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { GenerationComposer, type ComposerReplyState, type ComposerSubmitInput } from "@/features/generation/generation-composer";
 import { favoriteGeneration, generateMusic, generationExports, readGeneration, regenerateGeneration, type GenerationFile, type GenerationRecord } from "@/services/generations";
@@ -152,6 +153,11 @@ export default function ProjectPage() {
     } catch (reason) {
       toast.error(reason instanceof Error ? reason.message : "Unable to open export.");
     }
+  };
+
+  const resolvePlaybackUrl = async (generationId: string) => {
+    const files = await loadExports(generationId);
+    return primaryExport(files)?.url;
   };
 
   const handleFavorite = async (generationId: string) => {
@@ -384,6 +390,7 @@ export default function ProjectPage() {
             const actionState = message.generation_id ? pending[message.generation_id] : undefined;
             const exports = message.generation_id ? exportMap[message.generation_id] : undefined;
             const midiTitle = exports?.find((file) => file.kind === "single")?.fileName ?? generationMap[message.generation_id ?? ""]?.generation_files?.[0]?.file_name ?? "MIDI file";
+            const generationRequest = message.generation_id ? generationMap[message.generation_id]?.generation_requests : undefined;
             return (
               <article key={message.id} className={`group flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
                 {!isUser && <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-violet-500/15 text-violet-200"><Bot className="size-4" /></div>}
@@ -418,7 +425,7 @@ export default function ProjectPage() {
                   )}
                   {isGeneration ? (
                     <>
-                      <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-white"><Music2 className="size-4 text-violet-200" />{message.content || midiTitle}</p>
+                      <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-white"><MidiPlayback url={primaryExport(exports ?? [])?.url} onRequestUrl={() => resolvePlaybackUrl(message.generation_id!)} prompt={generationRequest?.prompt ?? message.content} kind={generationRequest?.kind} fileName={midiTitle} /><Music2 className="size-4 text-violet-200" />{message.content || midiTitle}</p>
                       <div className="mt-3 flex items-center gap-2">
                         <button type="button" title="Download MIDI" aria-label="Download MIDI" onClick={() => void openExport(message.generation_id!)} disabled={Boolean(actionState)} className="grid size-9 place-items-center rounded-full border border-white/10 text-white transition hover:bg-white/[.08] disabled:opacity-60">{actionState === "download" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}</button>
                         {exports?.some((file) => file.kind === "multi") ? <button type="button" title="Download multi-track MIDI" aria-label="Download multi-track MIDI" onClick={() => void openExport(message.generation_id!, "multi")} disabled={Boolean(actionState)} className="grid size-9 place-items-center rounded-full border border-white/10 text-white transition hover:bg-white/[.08] disabled:opacity-60"><Download className="size-4" /></button> : null}
