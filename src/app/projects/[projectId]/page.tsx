@@ -337,18 +337,16 @@ export default function ProjectPage() {
       setComposerReply({ status: "processing", prompt: input.prompt, activeStep: 0, steps: generationProcessingSteps });
       const result = await projectsApi.createMessage(projectId, {
         content: input.prompt,
-        ...(input.kind ? {
-          generation: {
-            kind: input.kind,
-            key: input.key,
-            scale: input.scale,
-            tempo: input.tempo,
-            lengthBars: 8,
-            complexity: "medium",
-            variationAmount: 0.5,
-            timeSignature: [4, 4],
-          },
-        } : {}),
+        generation: {
+          kind: input.kind,
+          key: input.key,
+          scale: input.scale,
+          tempo: input.tempo,
+          lengthBars: 8,
+          complexity: "medium",
+          variationAmount: 0.5,
+          timeSignature: [4, 4],
+        },
       });
 
       if (result.data.mode === "generation") {
@@ -421,7 +419,7 @@ export default function ProjectPage() {
       });
       if (generation.data.mode === "generation") await loadMessages();
       const generated = selectedPart ?? (composerReply.kind === "chords" ? "Chords" : composerReply.kind === "drums" ? "Drums" : "Melody");
-      setComposerReply({ ...composerReply, status: "refining", stage: "next-part", questions: [{ id: "part", label: "Build next", prompt: "Nice. What should I build next?", options: ["Done", ...producerParts.filter((part) => part !== generated && part !== "Chords + Melody")] }], refinementIndex: 0, refinementAnswers: [], generatedParts: [generated] });
+      setComposerReply({ ...composerReply, status: "refining", stage: "next-part", questions: [{ id: "part", label: "Build next", prompt: "Nice. What should I build next?", options: ["Done", ...producerParts.filter((part) => part !== generated && part !== "Chords + Melody")] }], refinementIndex: 0, refinementAnswers: [], generatedParts: [generated], tempo: generation.data.generation?.tempo ?? (selectedTempo ? Number(selectedTempo) : composerReply.tempo) });
       setPendingPrompt(null);
     } catch (error) {
       setComposerReply(null);
@@ -439,7 +437,7 @@ export default function ProjectPage() {
     const kindParam = searchParams.get("kind");
     const scaleParam = searchParams.get("scale");
     const tempoParam = Number(searchParams.get("tempo"));
-    const kind = generationKinds.find((value) => value === kindParam) ?? "melody";
+    const kind = generationKinds.find((value) => value === kindParam);
     const scale = scaleParam === "major" || scaleParam === "minor" ? scaleParam : undefined;
     const key = searchParams.get("key") || undefined;
     const tempo = Number.isInteger(tempoParam) && tempoParam >= 40 && tempoParam <= 240 ? tempoParam : undefined;
