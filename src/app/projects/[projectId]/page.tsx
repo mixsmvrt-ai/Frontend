@@ -68,6 +68,8 @@ export default function ProjectPage() {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [editingBusy, setEditingBusy] = useState(false);
+  const [customTempo, setCustomTempo] = useState("");
+  const [customTempoActive, setCustomTempoActive] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const initialPromptSubmittedRef = useRef(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
@@ -372,6 +374,12 @@ export default function ProjectPage() {
 
   const answerRefinement = useCallback(async (question: PromptRefinementQuestion, value: string) => {
     if (!composerReply || composerReply.status !== "refining") return;
+    if (question.id === "tempo" && value === "Custom BPM") {
+      setCustomTempo("");
+      setCustomTempoActive(true);
+      return;
+    }
+    setCustomTempoActive(false);
     if (composerReply.stage === "next-part") {
       if (value === "Done") {
         setComposerReply(null);
@@ -548,6 +556,12 @@ export default function ProjectPage() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       {composerReply.questions?.[composerReply.refinementIndex ?? 0]?.options.map((option) => <button key={option} type="button" onClick={() => void answerRefinement(composerReply.questions![composerReply.refinementIndex ?? 0], option)} className="rounded-full border border-violet-300/25 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-100 transition hover:border-violet-300/60 hover:bg-violet-500/20">{option}</button>)}
                     </div>
+                    {composerReply.questions?.[composerReply.refinementIndex ?? 0]?.id === "tempo" && customTempoActive ? (
+                      <form className="mt-3 flex items-center gap-2" onSubmit={(event) => { event.preventDefault(); const bpm = Number(customTempo); if (!Number.isInteger(bpm) || bpm < 40 || bpm > 240) { toast.error("BPM must be a whole number between 40 and 240."); return; } void answerRefinement(composerReply.questions![composerReply.refinementIndex ?? 0], `${bpm} BPM`); }}>
+                        <input value={customTempo} onChange={(event) => setCustomTempo(event.target.value)} type="number" min="40" max="240" step="1" inputMode="numeric" autoFocus aria-label="Custom BPM" placeholder="40-240" className="w-28 rounded-full border border-violet-300/30 bg-black/20 px-3 py-1.5 text-sm text-white outline-none" />
+                        <button type="submit" className="rounded-full bg-violet-500 px-3 py-1.5 text-xs font-semibold text-white">Use BPM</button>
+                      </form>
+                    ) : null}
                   </>
                 ) : (
                   <>

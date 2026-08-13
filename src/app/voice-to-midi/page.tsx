@@ -151,6 +151,8 @@ export default function VoiceToMidiPage() {
   const [prompt, setPrompt] = useState("");
   const [conversation, setConversation] = useState<Array<{ role: "user" | "assistant"; content: string; fileName?: string; audioUrl?: string }>>([]);
   const [voiceRefinement, setVoiceRefinement] = useState<{ projectId: string; prompt: string; questions: PromptRefinementQuestion[]; index: number; answers: Array<{ category: string; value: string }>; hints: MusicInterpretationRecord["interpretation"]["musicBrainHints"]; stage?: "first" | "next"; generatedParts?: string[] } | null>(null);
+  const [customTempo, setCustomTempo] = useState("");
+  const [customTempoActive, setCustomTempoActive] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -586,6 +588,12 @@ export default function VoiceToMidiPage() {
 
   const answerVoiceRefinement = async (question: PromptRefinementQuestion, value: string) => {
     if (!voiceRefinement || busy) return;
+    if (question.id === "tempo" && value === "Custom BPM") {
+      setCustomTempo("");
+      setCustomTempoActive(true);
+      return;
+    }
+    setCustomTempoActive(false);
     if (voiceRefinement.stage === "next") {
       if (value === "Done") {
         setVoiceRefinement(null);
@@ -705,7 +713,7 @@ export default function VoiceToMidiPage() {
             {busy ? <div className="flex items-start gap-3"><div className="grid size-9 shrink-0 place-items-center rounded-full border border-violet-400/30 bg-violet-500/10 text-violet-300"><Music4 className="size-4" /></div><div className="rounded-2xl rounded-tl-md border border-white/[.08] bg-[#151821] px-4 py-3"><div className="flex items-center gap-1.5" aria-label="MidiFlow AI is processing"><span className="size-2 animate-bounce rounded-full bg-violet-300" /><span className="size-2 animate-bounce rounded-full bg-violet-300 [animation-delay:150ms]" /><span className="size-2 animate-bounce rounded-full bg-violet-300 [animation-delay:300ms]" /></div></div></div> : null}
             {file ? <div className="rounded-xl border border-white/[.08] bg-[#151821] p-3 text-xs text-[#bdb9c8]">Audio ready: <span className="text-white">{file.name}</span><span className="ml-2 text-violet-300">{recording ? `Recording ${formatTimer(recordingSeconds)}` : statusLabel}</span></div> : null}
             {interpretation ? <div className="rounded-xl border border-white/[.08] bg-[#151821] p-4 text-sm text-[#d6d1df]"><p className="font-semibold text-white">Detected idea</p><p className="mt-2 text-xs leading-5 text-[#a5a1b0]">{interpretation.interpretation.musicalSummary.concise}</p><p className="mt-3 text-xs text-violet-300">{interpretation.interpretation.genreConfidence[0]?.genre ?? "Contemporary"} · {interpretation.interpretation.emotion.primary} · {interpretation.interpretation.keyAnalysis.currentKey ?? "Auto key"}</p></div> : null}
-            {voiceRefinement ? <div className="rounded-xl border border-violet-300/20 bg-[#151821] p-4 text-sm text-[#d6d1df]"><p className="font-semibold text-white">{voiceRefinement.questions[voiceRefinement.index]?.prompt}</p><p className="mt-1 text-xs text-[#a5a1b0]">{voiceRefinement.questions[voiceRefinement.index]?.label} · quick producer check</p><div className="mt-3 flex flex-wrap gap-2">{voiceRefinement.questions[voiceRefinement.index]?.options.map((option) => <button key={option} type="button" onClick={() => void answerVoiceRefinement(voiceRefinement.questions[voiceRefinement.index], option)} className="rounded-full border border-violet-300/25 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-100 transition hover:border-violet-300/60 hover:bg-violet-500/20">{option}</button>)}</div></div> : null}
+            {voiceRefinement ? <div className="rounded-xl border border-violet-300/20 bg-[#151821] p-4 text-sm text-[#d6d1df]"><p className="font-semibold text-white">{voiceRefinement.questions[voiceRefinement.index]?.prompt}</p><p className="mt-1 text-xs text-[#a5a1b0]">{voiceRefinement.questions[voiceRefinement.index]?.label} · quick producer check</p><div className="mt-3 flex flex-wrap gap-2">{voiceRefinement.questions[voiceRefinement.index]?.options.map((option) => <button key={option} type="button" onClick={() => void answerVoiceRefinement(voiceRefinement.questions[voiceRefinement.index], option)} className="rounded-full border border-violet-300/25 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-100 transition hover:border-violet-300/60 hover:bg-violet-500/20">{option}</button>)}</div>{voiceRefinement.questions[voiceRefinement.index]?.id === "tempo" && customTempoActive ? <form className="mt-3 flex items-center gap-2" onSubmit={(event) => { event.preventDefault(); const bpm = Number(customTempo); if (!Number.isInteger(bpm) || bpm < 40 || bpm > 240) { toast.error("BPM must be a whole number between 40 and 240."); return; } void answerVoiceRefinement(voiceRefinement.questions[voiceRefinement.index], `${bpm} BPM`); }}><input value={customTempo} onChange={(event) => setCustomTempo(event.target.value)} type="number" min="40" max="240" step="1" inputMode="numeric" autoFocus aria-label="Custom BPM" placeholder="40-240" className="w-28 rounded-full border border-violet-300/30 bg-black/20 px-3 py-1.5 text-sm text-white outline-none" /><button type="submit" className="rounded-full bg-violet-500 px-3 py-1.5 text-xs font-semibold text-white">Use BPM</button></form> : null}</div> : null}
             {error ? <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</p> : null}
           </div>
         </div>
