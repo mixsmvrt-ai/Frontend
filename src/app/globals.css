@@ -35,6 +35,7 @@ body {
 *::-webkit-scrollbar { display: none; width: 0; height: 0; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
+[data-admin-shell] { font-family: Inter, "Segoe UI", sans-serif; }
 .glow { box-shadow: 0 0 80px rgba(116, 220, 211, .16); }
 .glass { background: var(--panel); border: 1px solid var(--border); backdrop-filter: blur(20px); }
 .field { background: rgba(255,255,255,.045); border: 1px solid var(--border); border-radius: .75rem; color: white; padding: .75rem; width: 100%; outline: none; }
