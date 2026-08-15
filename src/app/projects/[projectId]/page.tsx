@@ -318,13 +318,15 @@ export default function ProjectPage() {
     setAssistantTyping(false);
     try {
       const refinement = await projectsApi.refine(projectId, { prompt: input.prompt, kind: input.kind });
-      if (!refinement.data.shouldGenerate && refinement.data.questions.length) {
+      const tempoQuestion: PromptRefinementQuestion = { id: "tempo", label: "Tempo", prompt: "What BPM should I use?", options: ["80 BPM", "95 BPM", "105 BPM", "120 BPM", "Custom BPM"] };
+      const questions = [tempoQuestion, ...refinement.data.questions.filter((question) => question.id !== "tempo")];
+      if (questions.length) {
         setComposerReply({
           status: "refining",
           prompt: input.prompt,
           activeStep: 0,
           steps: generationProcessingSteps,
-          questions: refinement.data.questions,
+          questions,
           refinementIndex: 0,
           refinementAnswers: [],
           kind: input.kind,
