@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUp, CircleDashed, Download, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleDashed, Download, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -65,6 +65,7 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [localReplyState, setLocalReplyState] = useState<ComposerReplyState | null>(null);
+  const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const processingTimerRef = useRef<number | null>(null);
   const textCredits = membership?.credits;
   const creditsExhausted = Boolean(isAuthenticated && textCredits && textCredits.textBalance < textCredits.textToMidiCost);
@@ -75,6 +76,31 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
       window.clearInterval(processingTimerRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    const updateScrollState = () => {
+      const main = document.querySelector("main");
+      const mainRemaining = main ? main.scrollHeight - main.scrollTop - main.clientHeight : 0;
+      const pageRemaining = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
+      setShowScrollToLatest(Math.max(mainRemaining, pageRemaining) > 80);
+    };
+    updateScrollState();
+    document.addEventListener("scroll", updateScrollState, { passive: true, capture: true });
+    window.addEventListener("resize", updateScrollState);
+    return () => {
+      document.removeEventListener("scroll", updateScrollState, true);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [localReplyState]);
+
+  const scrollToLatest = () => {
+    const main = document.querySelector("main");
+    if (main && main.scrollHeight - main.clientHeight > 0) {
+      main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
+      return;
+    }
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+  };
 
   useEffect(() => {
     if (!settingsOpen) return;
@@ -331,6 +357,7 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
           </motion.button>
         </div>
       </div>
+      {showScrollToLatest ? <button type="button" onClick={scrollToLatest} title="Jump to latest message" aria-label="Jump to latest message" className="fixed bottom-24 left-1/2 z-40 grid size-10 -translate-x-1/2 place-items-center rounded-full border border-white/15 bg-[#171427]/95 text-white shadow-[0_12px_35px_rgba(0,0,0,.45)] backdrop-blur transition hover:bg-violet-600"><ArrowDown className="size-4" /></button> : null}
       {localReplyState ? (
         <div className="mt-3 rounded-[1.5rem] border border-white/10 bg-white/[.04] px-4 py-3 text-sm text-[#ddd9e7]">
           {localReplyState.status === "processing" ? (
