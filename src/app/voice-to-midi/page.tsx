@@ -4,14 +4,11 @@ import {
   ArrowDown,
   ArrowUp,
   FileMusic,
-  History,
   Pause,
   Play,
   Mic,
   Music4,
-  SlidersHorizontal,
   Trash2,
-  Waves,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -549,12 +546,20 @@ export default function VoiceToMidiPage() {
       setStatusLabel("Generate MIDI");
       const prompt = buildPrompt(interpreted.data.interpretation, enhanceMelody);
       const hints = interpreted.data.interpretation.musicBrainHints;
-            const refinement = await projectsApi.refine(projectId, { prompt, kind: "full_composition" });
-            if (!refinement.data.shouldGenerate && refinement.data.questions.length) {
-              setVoiceRefinement({ projectId, prompt, questions: refinement.data.questions, index: 0, answers: [], hints });
-              setStatusLabel("Ready");
-              return;
-            }
+      setVoiceRefinement({
+        projectId,
+        prompt,
+        questions: [
+          { id: "part", label: "Build first", prompt: "What should I turn your voice into first?", options: ["Melody", "Chords", "Bass", "Drums", "Full Composition"] },
+          { id: "tempo", label: "Tempo", prompt: "What tempo should the MIDI use?", options: ["80 BPM", "95 BPM", "105 BPM", "120 BPM", "Custom BPM"] },
+          { id: "mood", label: "Direction", prompt: "What feeling should I emphasize?", options: ["Keep the original feel", "Emotional", "Dark", "Uplifting", "Cinematic"] },
+        ],
+        index: 0,
+        answers: [],
+        hints,
+      });
+      setStatusLabel("Ready");
+      return;
 
       const generation = await generateMusic({
         prompt,
@@ -702,8 +707,6 @@ export default function VoiceToMidiPage() {
     <AppShell>
       <section className="mx-auto flex min-h-[calc(100dvh-2.5rem)] max-w-5xl flex-col">
         <header className="flex items-center justify-between px-1 py-3 md:px-4 md:py-5">
-          <div className="flex items-center gap-3"><div className="grid size-9 place-items-center rounded-xl bg-violet-500/10 text-violet-300"><Waves className="size-5" /></div><div><h1 className="text-lg font-bold text-white">Voice to MIDI</h1><p className="text-xs text-[#a8a8b5]">Speak your idea. I&apos;ll turn it into MIDI.</p></div></div>
-          <div className="flex items-center gap-2"><button type="button" className="hidden items-center gap-2 rounded-lg border border-white/[.1] px-3 py-2 text-xs text-[#d6d2df] sm:flex"><History className="size-3.5" />History</button><button type="button" aria-label="Voice settings" className="grid size-9 place-items-center rounded-lg border border-white/[.1] text-[#aaa8b8]"><SlidersHorizontal className="size-4" /></button></div>
         </header>
 
         <div ref={voiceScrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-6 pb-72 md:px-10 md:pb-56">
@@ -734,6 +737,7 @@ function PlusIcon() {
 
 function VoiceMessage({ src, fileName }: { src: string; fileName?: string }) {
   const [playing, setPlaying] = useState(false);
+  const [duration, setDuration] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const togglePlayback = async () => {
@@ -748,7 +752,7 @@ function VoiceMessage({ src, fileName }: { src: string; fileName?: string }) {
   };
 
   return <div className="min-w-[min(18rem,72vw)] rounded-2xl rounded-br-md border border-violet-300/20 bg-violet-600/90 p-3 text-white shadow-[0_10px_30px_rgba(124,58,237,.2)]">
-    <audio ref={audioRef} src={src} onEnded={() => setPlaying(false)} className="hidden" />
+    <audio ref={audioRef} src={src} preload="metadata" onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : null)} onEnded={() => setPlaying(false)} className="hidden" />
     <div className="flex items-center gap-3">
       <button type="button" onClick={() => void togglePlayback()} className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-violet-700" aria-label={playing ? "Pause voice recording" : "Play voice recording"}>
         {playing ? <Pause className="size-4" /> : <Play className="ml-0.5 size-4" />}
@@ -757,7 +761,7 @@ function VoiceMessage({ src, fileName }: { src: string; fileName?: string }) {
         {Array.from({ length: 28 }, (_, index) => <span key={index} className="w-1 rounded-full bg-white/75" style={{ height: `${10 + ((index * 17) % 22)}px` }} />)}
       </div>
     </div>
-    <p className="mt-2 truncate text-xs font-medium text-white/80">{fileName ?? "Voice recording"}</p>
+    <div className="mt-2 flex items-center justify-between gap-3 text-xs font-medium text-white/80"><p className="truncate">{fileName ?? "Voice recording"}</p><span className="shrink-0 tabular-nums">{duration !== null ? formatTimer(duration) : "--:--"}</span></div>
   </div>;
 }
 /*
