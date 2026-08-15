@@ -34,3 +34,26 @@ export async function getAdminUsers(query?: string) {
 export async function getAdminResource(resource: string) {
   return apiRequest<{ data: Array<Record<string, unknown>> }>(`/admin/${resource}`);
 }
+
+export type AdminSupportMessage = { id: string; body: string; author_id: string; created_at: string };
+export type AdminSupportTicket = { id: string; subject: string; status: "open" | "pending" | "resolved"; priority: string; assigned_to: string | null; created_at: string; updated_at: string; admin_read_at: string | null; unread: boolean; sender: { id: string; name: string; email: string | null }; support_messages: AdminSupportMessage[] };
+
+export async function getAdminSupportTickets() {
+  return apiRequest<{ data: AdminSupportTicket[] }>("/admin/support/tickets");
+}
+
+export async function getAdminSupportUnreadCount() {
+  return apiRequest<{ data: { unread: number } }>("/admin/support/unread-count");
+}
+
+export async function getAdminSupportTicket(ticketId: string) {
+  return apiRequest<{ data: AdminSupportTicket }>(`/admin/support/tickets/${encodeURIComponent(ticketId)}`);
+}
+
+export async function updateAdminSupportTicket(ticketId: string, input: { status?: AdminSupportTicket["status"]; assignedTo?: string | null }) {
+  return apiRequest<{ data: AdminSupportTicket }>(`/admin/support/tickets/${encodeURIComponent(ticketId)}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
+export async function replyToAdminSupportTicket(ticketId: string, body: string) {
+  return apiRequest<{ data: AdminSupportMessage }>(`/admin/support/tickets/${encodeURIComponent(ticketId)}/messages`, { method: "POST", body: JSON.stringify({ body }) });
+}

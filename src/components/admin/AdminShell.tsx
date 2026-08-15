@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, ChevronDown, LayoutDashboard, LogOut, Menu, Search, Settings, ShieldCheck, Sparkles, Users, CreditCard, UsersRound, FolderKanban, Music2, Bot, Brain, LifeBuoy, BarChart3, X } from "lucide-react";
+import { getAdminSupportUnreadCount } from "@/services/admin";
 
 const nav = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -27,8 +28,10 @@ const titles: Record<string, string> = {
 export default function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadSupport, setUnreadSupport] = useState(0);
   const section = pathname.split("/")[2] || "admin";
   const title = titles[section] ?? "Dashboard";
+  useEffect(() => { const refreshUnreadSupport = () => { void getAdminSupportUnreadCount().then((response) => setUnreadSupport(response.data.unread)).catch(() => undefined); }; refreshUnreadSupport(); const interval = window.setInterval(refreshUnreadSupport, 30000); return () => window.clearInterval(interval); }, [pathname]);
 
   return (
     <div data-admin-shell className="min-h-screen bg-[#0B0B0F] text-slate-100">
@@ -44,7 +47,7 @@ export default function AdminShell({ children }: Readonly<{ children: React.Reac
         <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1 scrollbar-hidden">
           {nav.map(({ label, href, icon: Icon }) => {
             const active = href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
-            return <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition ${active ? "bg-violet-500/12 font-medium text-violet-200 ring-1 ring-violet-400/15" : "text-slate-500 hover:bg-white/[0.04] hover:text-slate-200"}`}><Icon size={17} className={active ? "text-violet-400" : "text-slate-600 group-hover:text-slate-300"} /><span>{label}</span>{active && <span className="ml-auto size-1.5 rounded-full bg-violet-400" />}</Link>;
+            return <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition ${active ? "bg-violet-500/12 font-medium text-violet-200 ring-1 ring-violet-400/15" : "text-slate-500 hover:bg-white/[0.04] hover:text-slate-200"}`}><Icon size={17} className={active ? "text-violet-400" : "text-slate-600 group-hover:text-slate-300"} /><span>{label}</span>{label === "Support" && unreadSupport > 0 ? <span className="ml-auto min-w-5 rounded-full bg-rose-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">{unreadSupport > 99 ? "99+" : unreadSupport}</span> : active && <span className="ml-auto size-1.5 rounded-full bg-violet-400" />}</Link>;
           })}
         </nav>
         <div className="mt-4 shrink-0 space-y-3">
