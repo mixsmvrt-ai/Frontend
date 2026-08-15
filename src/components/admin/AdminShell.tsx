@@ -34,7 +34,7 @@ export default function AdminShell({ children }: Readonly<{ children: React.Reac
     <div data-admin-shell className="min-h-screen bg-[#0B0B0F] text-slate-100">
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col overflow-hidden border-r border-white/[0.07] bg-[#111118] px-3 py-5 transition-transform duration-200 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center justify-between px-3 pb-7">
-          <Link href="/admin" className="flex items-center gap-2.5" onClick={() => setMobileOpen(false)}>
+          <Link href="/create" className="flex items-center gap-2.5" onClick={() => setMobileOpen(false)}>
             <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 shadow-lg shadow-violet-500/20"><Sparkles size={17} /></span>
             <span className="text-sm font-semibold tracking-wide text-white">Midi<span className="text-violet-400">Flow</span></span>
           </Link>
