@@ -398,8 +398,8 @@ export default function ProjectPage() {
       setComposerReply({ ...composerReply, status: "processing" });
       try {
         await projectsApi.createMessage(projectId, {
-          content: `${composerReply.prompt}\n\nContinue the same project. Build the next layer: ${value}. Keep existing generated parts compatible and do not replace them.`,
-          generation: { kind: kindForPart(value), key: composerReply.key, scale: composerReply.scale, tempo: composerReply.tempo, lengthBars: 8, complexity: "medium", variationAmount: 0.5, timeSignature: [4, 4] },
+          content: composerReply.prompt,
+          generation: { kind: kindForPart(value), key: composerReply.key, scale: composerReply.scale, tempo: composerReply.tempo, mood: composerReply.refinementAnswers?.find((answer) => answer.category === "mood")?.value, lengthBars: 8, complexity: "medium", variationAmount: 0.5, timeSignature: [4, 4] },
         });
         await loadMessages();
         const generatedParts = [...(composerReply.generatedParts ?? []), value];
@@ -422,11 +422,13 @@ export default function ProjectPage() {
     try {
       const selectedPart = answers.find((answer) => answer.category === "part")?.value;
       const selectedTempo = answers.find((answer) => answer.category === "tempo")?.value.match(/\d+/)?.[0];
+      const selectedMood = answers.find((answer) => answer.category === "mood")?.value;
       const generation = await projectsApi.createMessage(projectId, {
-        content: `${composerReply.prompt}\n\nBuild this first: ${selectedPart ?? "the requested part"}.\nProducer decisions: ${answers.map((answer) => `${answer.category}=${answer.value}`).join("; ")}`,
+        content: composerReply.prompt,
         generation: {
           kind: selectedPart ? kindForPart(selectedPart) : composerReply.kind ?? "full_composition",
           tempo: selectedTempo ? Number(selectedTempo) : composerReply.tempo,
+          mood: selectedMood,
           key: composerReply.key,
           scale: composerReply.scale,
           lengthBars: 8,
