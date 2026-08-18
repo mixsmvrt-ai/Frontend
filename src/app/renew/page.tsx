@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarDays, Check } from "lucide-react";
+import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { PayPalCheckout } from "@/features/billing/paypal-checkout";
@@ -12,60 +13,14 @@ export default function RenewPage() {
 
   return (
     <AppShell>
-      <section className="mx-auto max-w-3xl">
-        <p className="text-xs font-bold uppercase tracking-[.16em] text-violet-300">Membership</p>
-        <h1 className="mt-2 text-4xl font-black">Keep your creative flow open.</h1>
+      <section className="mx-auto max-w-5xl pb-10">
+        <Link href="/billing" className="inline-flex items-center gap-2 text-sm text-[#aaa3bd] transition hover:text-white"><ArrowLeft className="size-4" />Back to billing</Link>
+        <h1 className="mt-7 text-3xl font-black">Checkout</h1>
         {error ? <p className="mt-8 text-red-200">{error}</p> : null}
         {loading && isAuthenticated ? (
           <div className="mt-8 h-72 animate-pulse rounded-2xl bg-white/5" />
         ) : (
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_.85fr]">
-            <section className="glass rounded-2xl p-6">
-              <p className="text-sm text-[#aaa3bd]">Current access</p>
-              <h2 className="mt-1 text-2xl font-bold capitalize">{isAuthenticated ? membership?.type ?? "membership" : "guest"}</h2>
-              <div className="mt-7 rounded-xl bg-white/5 p-4">
-                <CalendarDays className="size-5 text-violet-300" />
-                <p className="mt-4 font-semibold">
-                  {!isAuthenticated
-                    ? "Sign in when you want to renew or activate access"
-                    : membership?.type === "pro" || membership?.type === "trial"
-                    ? `${membership.daysRemaining} days remaining`
-                    : membership?.type === "admin"
-                      ? "Admin access active"
-                      : "Read-only mode active"}
-                </p>
-                <p className="mt-1 text-sm text-[#aaa3bd]">
-                  {!isAuthenticated
-                    ? "The renew page stays visible to guests, but payment starts only after login."
-                    : membership?.accessExpiresAt
-                    ? `Paid access expires ${new Date(membership.accessExpiresAt).toLocaleDateString()}`
-                    : membership?.trialExpiresAt
-                      ? `Trial expires ${new Date(membership.trialExpiresAt).toLocaleDateString()}`
-                      : "Renew your 30-day Pro Pass to keep creating without interruption."}
-                </p>
-              </div>
-            </section>
-            <section className="rounded-2xl border border-violet-400/50 bg-violet-500/10 p-6">
-              <p className="text-sm text-violet-200">30-day Pro Pass</p>
-              <h2 className="mt-3 text-3xl font-bold">
-                {membership?.price
-                  ? new Intl.NumberFormat(undefined, {
-                      style: "currency",
-                      currency: membership.price.currency,
-                    }).format(membership.price.amountCents / 100)
-                  : "Configured in backend"}
-              </h2>
-              <ul className="mt-6 space-y-3 text-sm text-[#ded9ed]">
-                <li className="flex items-center gap-3"><Check className="size-4 text-violet-200" />Unlimited MIDI generation during your active term</li>
-                <li className="flex items-center gap-3"><Check className="size-4 text-violet-200" />Voice to MIDI and orchestration tools</li>
-                <li className="flex items-center gap-3"><Check className="size-4 text-violet-200" />Cloud project history, notes, and exports</li>
-                <li className="flex items-center gap-3"><Check className="size-4 text-violet-200" />Secure one-time PayPal checkout</li>
-              </ul>
-              <div className="mt-8">
-                <PayPalCheckout mode="renew" />
-              </div>
-            </section>
-          </div>
+          <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_.85fr]"><section className="rounded-xl border border-white/10 bg-[#f5f7fa] p-5 text-[#1d2230] shadow-[0_20px_70px_rgba(0,0,0,.25)] sm:p-7"><div className="flex items-center justify-between border-b border-[#dfe3ea] pb-5"><div><p className="text-xs font-bold uppercase tracking-[.12em] text-[#687080]">Order summary</p><h2 className="mt-2 text-xl font-bold">MidiFlow Pro Pass</h2></div><Lock className="size-5 text-[#687080]" /></div><div className="mt-5 flex items-center justify-between rounded-lg border border-[#dfe3ea] bg-white p-4"><div><p className="font-semibold">Renewal</p><p className="mt-1 text-sm text-[#687080]">Full creation access for 30 days</p></div><p className="text-lg font-bold">{membership?.price ? new Intl.NumberFormat(undefined, { style: "currency", currency: membership.price.currency }).format(membership.price.amountCents / 100) : "Configured in backend"}</p></div><div className="mt-6 flex items-center gap-2 text-sm text-[#4d5666]"><ShieldCheck className="size-4 text-emerald-600" />Secure checkout. No subscription or auto-renewal.</div></section><section className="rounded-xl border border-white/10 bg-[#111424] p-5 shadow-[0_20px_70px_rgba(0,0,0,.25)] sm:p-7"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#a8a0bb]">Pricing details</p><div className="mt-5 flex justify-between border-b border-white/10 pb-4 text-base font-bold text-white"><span>Total</span><span>{membership?.price ? new Intl.NumberFormat(undefined, { style: "currency", currency: membership.price.currency }).format(membership.price.amountCents / 100) : "Configured in backend"}</span></div><div className="mt-6"><PayPalCheckout mode="renew" /></div></section></div>
         )}
       </section>
     </AppShell>
