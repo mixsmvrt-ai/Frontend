@@ -35,6 +35,14 @@ export async function getAdminResource(resource: string) {
   return apiRequest<{ data: Array<Record<string, unknown>> }>(`/admin/${resource}`);
 }
 
+export async function updateAdminResource(resource: string, id: string, input: Record<string, unknown>) {
+  return apiRequest<{ data: Record<string, unknown> }>(`/admin/${resource}/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
+export async function runAdminUserAction(id: string, input: { action: "temporary_password" | "credits" | "plan" | "ban" | "unban"; password?: string; credits?: number; plan?: "go" | "plus"; banDays?: number }) {
+  return apiRequest<{ data: Record<string, unknown> }>(`/admin/users/${encodeURIComponent(id)}/actions`, { method: "POST", body: JSON.stringify(input) });
+}
+
 export type AdminSupportMessage = { id: string; body: string; author_id: string; created_at: string };
 export type AdminSupportTicket = { id: string; subject: string; status: "open" | "pending" | "resolved"; priority: string; assigned_to: string | null; created_at: string; updated_at: string; admin_read_at: string | null; unread: boolean; sender: { id: string; name: string; email: string | null }; support_messages: AdminSupportMessage[] };
 
