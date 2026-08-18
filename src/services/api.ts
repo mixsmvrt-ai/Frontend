@@ -40,6 +40,8 @@ export interface MembershipSnapshot {
   trialDaysRemaining: number;
   price?: PlanPrice;
   prices?: { go: PlanPrice; plus: PlanPrice };
+  cancelAtPeriodEnd?: boolean;
+  cancellationRequestedAt?: string | null;
   credits?: CreditSummary;
 }
 

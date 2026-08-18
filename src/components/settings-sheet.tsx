@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, Bell, BookOpen, Check, HelpCircle, Loader2, LogOut, Save, Shield, Sparkles, Settings, UserRound, Volume2, X } from "lucide-react";
+import { ArrowLeft, Bell, BookOpen, Check, CreditCard, HelpCircle, Loader2, LogOut, Save, Shield, Sparkles, Settings, UserRound, Volume2, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { MembershipSnapshot } from "@/services/api";
 import { accountApi, type AccountProfileResponse } from "@/services/account";
 import { referralApi, type ReferralDashboard } from "@/services/referrals";
+import { apiRequest } from "@/services/api";
 
 type SettingsSheetProps = {
   isAuthenticated: boolean;
@@ -33,7 +34,9 @@ function SheetButton({ label, icon: Icon, onClick }: { label: string; icon: Luci
   </button>;
 }
 
-type PanelName = "account" | "general" | "notifications" | "parental" | "safety" | "security" | "storage" | "data" | "ads" | "support" | "referrals";
+type PanelName = "account" | "billing" | "general" | "notifications" | "parental" | "safety" | "security" | "storage" | "data" | "ads" | "support" | "referrals";
+
+type BillingPayment = { id: string; amount_cents: number; currency: string; status: string; created_at: string; access_expires_at?: string | null; billing_history?: Array<{ invoice_number: string }> };
 
 function CreditUsage({ membership }: { membership: MembershipSnapshot | null }) {
   const credits = membership?.credits;
@@ -43,9 +46,38 @@ function CreditUsage({ membership }: { membership: MembershipSnapshot | null }) 
   return <div className="rounded-2xl bg-white/[.04] p-4"><div className="flex items-center justify-between gap-3 text-sm"><span className="font-semibold text-white">Credit usage</span><span className="text-[#b5b5bd]">{used.toLocaleString()} / {allocation.toLocaleString()}</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-violet-400 transition-[width]" style={{ width: `${percent}%` }} /></div><p className="mt-2 text-xs text-[#9f9fa8]">Monthly credits reset with your plan.</p></div>;
 }
 
+function BillingPanel({ membership }: { membership: MembershipSnapshot | null }) {
+  const [payments, setPayments] = useState<BillingPayment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelled, setCancelled] = useState(Boolean(membership?.cancelAtPeriodEnd));
+
+  useEffect(() => {
+    void apiRequest<{ data: BillingPayment[] }>("/billing", undefined, { redirectOnMissingUser: false }).then((response) => setPayments(response.data)).catch(() => setPayments([])).finally(() => setLoading(false));
+  }, []);
+
+  const cancel = async () => {
+    if (!window.confirm("Cancel future renewal? You will keep access until your current plan ends, and your existing projects will remain available.")) return;
+    setCancelling(true);
+    try {
+      await apiRequest("/membership/cancel", { method: "POST" }, { redirectOnMissingUser: false });
+      setCancelled(true);
+      toast.success("Cancellation scheduled for the end of your current plan.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to schedule cancellation.");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const endDate = membership?.type === "pro" ? membership.accessExpiresAt : membership?.trialExpiresAt;
+  return <div className="space-y-4"><div className="rounded-2xl bg-white/[.04] p-4"><p className="text-xs uppercase tracking-[.12em] text-[#9f9fa8]">Current plan</p><p className="mt-2 text-2xl font-bold capitalize">{membership?.type === "pro" ? `${membership.plan === "go" ? "Go" : "Plus"} Pro Pass` : membership?.type === "trial" ? "7-day Pro trial" : membership?.type ?? "No active plan"}</p><div className="mt-3 grid gap-2 text-sm"><InfoRow label="Plan ends" value={endDate ? new Date(endDate).toLocaleDateString() : "Not active"} /><InfoRow label="Status" value={cancelled ? "Ends as scheduled" : membership?.active ? "Active" : "Read-only"} /></div></div>{membership?.active && !membership.isAdmin ? <button type="button" onClick={() => void cancel()} disabled={cancelling || cancelled} className="w-full rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200 disabled:cursor-not-allowed disabled:opacity-60">{cancelled ? "Cancellation scheduled" : cancelling ? "Scheduling cancellation..." : "Cancel plan at end of term"}</button> : null}<div><p className="mb-2 text-sm font-semibold text-white">Billing history</p>{loading ? <div className="rounded-2xl bg-white/[.04] p-4 text-sm text-[#aaaab1]">Loading payments...</div> : payments.length ? <div className="space-y-2">{payments.map((payment) => <div key={payment.id} className="rounded-2xl bg-white/[.04] p-3 text-sm"><div className="flex justify-between gap-3"><span>{new Date(payment.created_at).toLocaleDateString()}</span><span className="font-semibold">{new Intl.NumberFormat(undefined, { style: "currency", currency: payment.currency }).format(payment.amount_cents / 100)}</span></div><div className="mt-1 flex justify-between gap-3 text-xs text-[#9f9fa8]"><span className="capitalize">{payment.status}</span><span>{payment.billing_history?.[0]?.invoice_number ?? "Invoice pending"}</span></div></div>)}</div> : <p className="rounded-2xl bg-white/[.04] p-4 text-sm text-[#aaaab1]">No payments recorded yet.</p>}</div><p className="text-xs leading-5 text-[#8f8b98]">Cancelling stops future renewal only. Your projects, MIDI files, and previous work remain available after access ends.</p></div>;
+}
+
 function PanelView({ panel, profile, referral, membership, loading, saving, onProfileChange, onSaveProfile, onSavePreferences }: { panel: PanelName; profile: AccountProfileResponse | null; referral: ReferralDashboard | null; membership: MembershipSnapshot | null; loading: boolean; saving: boolean; onProfileChange: (profile: AccountProfileResponse) => void; onSaveProfile: () => void; onSavePreferences: () => void }) {
   const titles: Record<PanelName, string> = {
     account: "My account",
+    billing: "Billing",
     general: "General",
     notifications: "Notifications",
     parental: "Parental controls",
@@ -58,6 +90,7 @@ function PanelView({ panel, profile, referral, membership, loading, saving, onPr
     referrals: "Referrals",
   };
 
+  if (panel === "billing") return <BillingPanel membership={membership} />;
   if (loading) return <div className="flex items-center gap-3 rounded-2xl bg-white/[.04] p-5 text-sm text-[#b5b5bd]"><Loader2 className="size-4 animate-spin" />Loading {titles[panel].toLowerCase()}...</div>;
 
   if (panel === "account") return <div className="space-y-4"><EditField label="Display name" value={profile?.display_name ?? ""} onChange={(value) => profile && onProfileChange({ ...profile, display_name: value })} /><InfoRow label="Email" value={profile?.email ?? "Available after sign in"} /><InfoRow label="Member since" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "Not available"} /><SaveButton saving={saving} onClick={onSaveProfile} label="Save account" /></div>;
@@ -66,7 +99,7 @@ function PanelView({ panel, profile, referral, membership, loading, saving, onPr
   if (panel === "storage") return <div className="space-y-3"><InfoRow label="Autosave" value={profile?.preferences.auto_save ? "Enabled" : "Disabled"} /><InfoRow label="Autosave interval" value={`${profile?.preferences.autosave_interval_seconds ?? 60} seconds`} /><InfoRow label="Downloads" value="Your exported MIDI files are available in Downloads." /></div>;
   if (panel === "support") return <div className="space-y-4"><p className="text-sm leading-6 text-[#b5b5bd]">Get help with MIDI generation, projects, billing, or account access.</p><Link href="/support" className="block rounded-xl bg-violet-500 px-4 py-3 text-center text-sm font-bold">Open support center</Link></div>;
   if (panel === "referrals") return <div className="space-y-4"><InfoRow label="Referral code" value={referral?.code ?? "Unavailable"} /><div className="grid grid-cols-2 gap-3"><InfoRow label="Successful" value={String(referral?.stats.successfulReferrals ?? 0)} /><InfoRow label="Earnings" value={`$${(referral?.stats.totalEarnings ?? 0).toFixed(2)}`} /></div><p className="rounded-2xl bg-white/[.04] p-4 text-sm leading-6 text-[#b5b5bd]">Share your referral link and track signups, paid conversions, and commissions from your referral dashboard.</p><Link href="/referrals" className="block rounded-xl bg-violet-500 px-4 py-3 text-center text-sm font-bold">Open referrals dashboard</Link></div>;
-  const descriptions: Record<Exclude<PanelName, "account" | "general" | "notifications" | "storage" | "support" | "referrals">, string> = { parental: "Manage family and shared access settings when available.", safety: "MidiFlow keeps generation and account actions protected by server-side access controls.", security: "Your sign-in and account security are managed through your authenticated session.", data: "Your projects, prompts, downloads, and preferences remain attached to your account.", ads: "MidiFlow currently does not use advertising controls in the workspace." };
+  const descriptions: Record<Exclude<PanelName, "account" | "billing" | "general" | "notifications" | "storage" | "support" | "referrals">, string> = { parental: "Manage family and shared access settings when available.", safety: "MidiFlow keeps generation and account actions protected by server-side access controls.", security: "Your sign-in and account security are managed through your authenticated session.", data: "Your projects, prompts, downloads, and preferences remain attached to your account.", ads: "MidiFlow currently does not use advertising controls in the workspace." };
   return <p className="rounded-2xl bg-white/[.04] p-5 text-sm leading-6 text-[#b5b5bd]">{descriptions[panel as keyof typeof descriptions]}</p>;
 }
 
@@ -98,7 +131,7 @@ export function SettingsSheet({ isAuthenticated, membership, showAdminLink, onSu
 
   const openPanel = async (panel: PanelName) => {
     setActivePanel(panel);
-    if (!isAuthenticated || (panel !== "referrals" && profile) || (panel === "referrals" && referral)) return;
+    if (panel === "billing" || !isAuthenticated || (panel !== "referrals" && profile) || (panel === "referrals" && referral)) return;
     setProfileLoading(true);
     try {
       if (panel === "referrals") {
@@ -158,7 +191,7 @@ export function SettingsSheet({ isAuthenticated, membership, showAdminLink, onSu
   };
 
   if (activePanel) return <div className="scrollbar-hidden max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[34px] border border-white/[.08] bg-[#1c1c1e] px-4 py-5 text-white shadow-[0_28px_100px_rgba(0,0,0,.65)]">
-    <div className="flex items-center gap-3 px-3 pb-6"><button type="button" onClick={() => setActivePanel(null)} className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[.04]" aria-label="Back to settings"><ArrowLeft className="size-5" /></button><h2 className="text-xl font-bold">{({ account: "My account", general: "General", notifications: "Notifications", parental: "Parental controls", safety: "Safety", security: "Security and login", storage: "Storage", data: "Data controls", ads: "Ads controls", support: "Support center", referrals: "Referrals" } as Record<PanelName, string>)[activePanel]}</h2></div>
+    <div className="flex items-center gap-3 px-3 pb-6"><button type="button" onClick={() => setActivePanel(null)} className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[.04]" aria-label="Back to settings"><ArrowLeft className="size-5" /></button><h2 className="text-xl font-bold">{({ account: "My account", billing: "Billing", general: "General", notifications: "Notifications", parental: "Parental controls", safety: "Safety", security: "Security and login", storage: "Storage", data: "Data controls", ads: "Ads controls", support: "Support center", referrals: "Referrals" } as Record<PanelName, string>)[activePanel]}</h2></div>
     <PanelView panel={activePanel} profile={profile} referral={referral} membership={membership} loading={profileLoading} saving={saving} onProfileChange={setProfile} onSaveProfile={() => void saveProfile()} onSavePreferences={() => void savePreferences()} />
   </div>;
 
@@ -186,6 +219,7 @@ export function SettingsSheet({ isAuthenticated, membership, showAdminLink, onSu
     <p className="px-3 pb-2 pt-7 text-lg font-bold text-[#a9a9ad]">Customize MidiFlow</p>
     <div className="overflow-hidden rounded-[28px] bg-[#2b2b2d]">
       <SheetButton label="General" icon={Settings} onClick={() => void openPanel("general")} />
+      <SheetButton label="Billing" icon={CreditCard} onClick={() => void openPanel("billing")} />
       <SheetButton label="Notifications" icon={Bell} onClick={() => void openPanel("notifications")} />
       <SheetLink label="Voice to MIDI" href="/voice-to-midi" icon={Volume2} onNavigate={onNavigate} />
       <SheetButton label="Parental controls" icon={UserRound} onClick={() => void openPanel("parental")} />
