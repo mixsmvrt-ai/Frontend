@@ -16,7 +16,7 @@ type GenerationMap = Record<string, GenerationRecord>;
 type ExportMap = Record<string, GenerationFile[]>;
 type PendingMap = Record<string, "download" | "regenerate" | "variation" | "favorite">;
 
-const generationKinds = ["melody", "chords", "counter_melody", "bassline", "drums", "full_composition"] as const;
+const generationKinds = ["melody", "chords", "chords_and_melody", "counter_melody", "bassline", "drums", "full_composition"] as const;
 const producerParts = ["Chords", "Chords + Melody", "Melody", "Lead", "Bass", "808", "Drums"];
 
 const generationProcessingSteps = [
@@ -46,6 +46,7 @@ function triggerDownload(url: string, fileName: string) {
 
 function kindForPart(part: string): ComposerSubmitInput["kind"] {
   if (part === "Chords") return "chords";
+  if (part === "Chords + Melody") return "chords_and_melody";
   if (part === "Melody" || part === "Lead") return "melody";
   if (part === "Bass" || part === "808") return "bassline";
   if (part === "Drums") return "drums";

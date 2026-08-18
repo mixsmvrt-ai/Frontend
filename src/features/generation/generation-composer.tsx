@@ -40,7 +40,7 @@ export interface ComposerReplyState {
 
 export interface ComposerSubmitInput {
   prompt: string;
-  kind?: "melody" | "chords" | "counter_melody" | "bassline" | "drums" | "full_composition";
+  kind?: "melody" | "chords" | "chords_and_melody" | "counter_melody" | "bassline" | "drums" | "full_composition";
   key?: string;
   scale?: "major" | "minor";
   tempo?: number;
@@ -303,6 +303,7 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
                 <option value="">Let prompt decide type</option>
                 <option>Melody</option>
                 <option>Chords</option>
+                <option value="chords_and_melody">Chords + Melody</option>
                 <option>Counter Melody</option>
                 <option>Bassline</option>
                 <option>Drums</option>
