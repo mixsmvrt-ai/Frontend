@@ -263,7 +263,7 @@ export default function SongPackGeneratorPage() {
         <header className="grid gap-6 px-1 py-3 md:px-4 md:py-5 lg:grid-cols-[1.1fr_.9fr]">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">Pro Workspace</p>
-            <h1 className="mt-3 text-4xl font-black tracking-tight">AI Song Pack Generator</h1>
+            <h1 className="mt-3 text-4xl font-black tracking-tight">Song Pack Generator</h1>
             <p className="mt-4 max-w-3xl text-[#beb8d1]">Describe the beat you want to build and choose which MIDI parts you want included.</p>
           </div>
         </header>
@@ -283,7 +283,7 @@ export default function SongPackGeneratorPage() {
               <label className="block text-sm font-medium">Humanization<input type="number" min="0" max="1" step="0.01" value={input.humanization ?? ""} onChange={(event) => setInput((current) => ({ ...current, humanization: event.target.value ? Number(event.target.value) : undefined }))} className="field mt-2" placeholder="Auto Detect" /></label>
               <label className="block text-sm font-medium">Song length / Bars<input type="number" min="8" max="8" value={input.lengthBars ?? 8} onChange={() => setInput((current) => ({ ...current, lengthBars: 8 }))} className="field mt-2" /></label>
             </div>
-            <p className="mt-3 text-xs text-[#8f88a6]">The optimized Song Pack planner currently generates compact 8-bar packs to minimize Gemini token usage.</p>
+            <p className="mt-3 text-xs text-[#8f88a6]">The optimized Song Pack planner generates compact 8-bar packs for focused, efficient musical ideas.</p>
 
             <div className="mt-8">
               <p className="text-sm font-semibold text-white">MIDI Part Selector</p>
