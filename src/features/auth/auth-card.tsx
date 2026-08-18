@@ -76,6 +76,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" | "rese
             ? await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` })
             : await supabase.auth.updateUser({ password });
       if (result.error) return toast.error(result.error.message);
+      if (mode === "signup") window.localStorage.setItem("midiflow:show-trial-welcome", "1");
       toast.success(mode === "forgot" ? "Reset instructions sent." : mode === "signup" ? "Account created. Check your inbox to verify your email." : mode === "reset" ? "Password updated." : "Logged in successfully.");
       if (mode === "login") router.replace(nextPath);
       if (mode === "signup") router.replace(nextPath);

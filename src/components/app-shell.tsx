@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Archive, AudioLines, Copy, Download, Ellipsis, LogOut, Menu, Mic2, Package2, Plus, Search, Settings, Shield, Sparkles, Trash2, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsSheet, SubscriptionDialog } from "@/components/settings-sheet";
+import { TrialWelcomeModal } from "@/components/trial-welcome-modal";
 import { useMembership } from "@/features/billing/use-membership";
 import { supabase } from "@/lib/supabase/browser";
 import { projectsApi } from "@/services/projects";
@@ -108,6 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
+  const [trialWelcomeOpen, setTrialWelcomeOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authResolved, setAuthResolved] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -198,6 +200,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (projectSearchOpen) projectSearchRef.current?.focus();
   }, [projectSearchOpen]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.localStorage.getItem("midiflow:show-trial-welcome") === "1") setTrialWelcomeOpen(true);
+  }, []);
+
+  const closeTrialWelcome = () => {
+    window.localStorage.removeItem("midiflow:show-trial-welcome");
+    setTrialWelcomeOpen(false);
+  };
 
   const projectAction = async (action: "rename" | "duplicate" | "archive" | "delete", project: Project) => {
     try {
@@ -396,6 +407,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {subscriptionOpen ? <SubscriptionDialog membership={membership} onClose={() => setSubscriptionOpen(false)} /> : null}
+      {trialWelcomeOpen ? <TrialWelcomeModal onClose={closeTrialWelcome} onStart={closeTrialWelcome} /> : null}
 
       <main className="min-w-0 flex-1 overflow-x-hidden md:h-[100dvh] md:overflow-y-auto">
         <div className="p-5 md:p-8">{children}</div>

@@ -70,6 +70,8 @@ export default function ProjectPage() {
   const [editingBusy, setEditingBusy] = useState(false);
   const [customTempo, setCustomTempo] = useState("");
   const [customTempoActive, setCustomTempoActive] = useState(false);
+  const [customMood, setCustomMood] = useState("");
+  const [customMoodActive, setCustomMoodActive] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const initialPromptSubmittedRef = useRef(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
@@ -381,7 +383,13 @@ export default function ProjectPage() {
       setCustomTempoActive(true);
       return;
     }
+    if (question.id === "mood" && value === "Custom Mood") {
+      setCustomMood("");
+      setCustomMoodActive(true);
+      return;
+    }
     setCustomTempoActive(false);
+    setCustomMoodActive(false);
     if (composerReply.stage === "next-part") {
       if (value === "Done") {
         setComposerReply(null);
@@ -562,6 +570,12 @@ export default function ProjectPage() {
                       <form className="mt-3 flex items-center gap-2" onSubmit={(event) => { event.preventDefault(); const bpm = Number(customTempo); if (!Number.isInteger(bpm) || bpm < 40 || bpm > 240) { toast.error("BPM must be a whole number between 40 and 240."); return; } void answerRefinement(composerReply.questions![composerReply.refinementIndex ?? 0], `${bpm} BPM`); }}>
                         <input value={customTempo} onChange={(event) => setCustomTempo(event.target.value)} type="number" min="40" max="240" step="1" inputMode="numeric" autoFocus aria-label="Custom BPM" placeholder="40-240" className="w-28 rounded-full border border-violet-300/30 bg-black/20 px-3 py-1.5 text-sm text-white outline-none" />
                         <button type="submit" className="rounded-full bg-violet-500 px-3 py-1.5 text-xs font-semibold text-white">Use BPM</button>
+                      </form>
+                    ) : null}
+                    {composerReply.questions?.[composerReply.refinementIndex ?? 0]?.id === "mood" && customMoodActive ? (
+                      <form className="mt-3 flex items-center gap-2" onSubmit={(event) => { event.preventDefault(); const mood = customMood.trim(); if (mood.length < 2 || mood.length > 80) { toast.error("Enter a mood between 2 and 80 characters."); return; } void answerRefinement(composerReply.questions![composerReply.refinementIndex ?? 0], mood); }}>
+                        <input value={customMood} onChange={(event) => setCustomMood(event.target.value)} type="text" maxLength={80} autoFocus aria-label="Custom mood" placeholder="Describe the mood" className="min-w-0 flex-1 rounded-full border border-violet-300/30 bg-black/20 px-3 py-1.5 text-sm text-white outline-none" />
+                        <button type="submit" className="rounded-full bg-violet-500 px-3 py-1.5 text-xs font-semibold text-white">Use Mood</button>
                       </form>
                     ) : null}
                   </>
