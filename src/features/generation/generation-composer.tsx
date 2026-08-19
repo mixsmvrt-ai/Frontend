@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowUp, CircleDashed, Download, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleDashed, Download, Plus, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -44,6 +44,7 @@ export interface ComposerSubmitInput {
   key?: string;
   scale?: "major" | "minor";
   tempo?: number;
+  signal?: AbortSignal;
 }
 
 function projectTitleFromPrompt(value: string) {
@@ -67,6 +68,7 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
   const [localReplyState, setLocalReplyState] = useState<ComposerReplyState | null>(null);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const processingTimerRef = useRef<number | null>(null);
+  const generationAbortRef = useRef<AbortController | null>(null);
   const textCredits = membership?.credits;
   const creditsExhausted = Boolean(isAuthenticated && textCredits && textCredits.textBalance < textCredits.textToMidiCost);
   const textCreditsLow = Boolean(textCredits && textCredits.textUsagePercent >= 80 && !creditsExhausted);
@@ -75,6 +77,7 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
     if (processingTimerRef.current) {
       window.clearInterval(processingTimerRef.current);
     }
+    generationAbortRef.current?.abort();
   }, []);
 
   useEffect(() => {
@@ -149,6 +152,14 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
     link.remove();
   };
 
+  const stopGeneration = () => {
+    generationAbortRef.current?.abort();
+    generationAbortRef.current = null;
+    clearProcessingTimer();
+    setBusy(false);
+    publishReplyState(null);
+  };
+
   const generate = async () => {
     const generationPrompt = prompt.trim();
     if (generationPrompt.length < 3) return toast.error("Describe at least a few notes or a musical feeling.");
@@ -193,6 +204,8 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
     }
 
     setBusy(true);
+    const abortController = new AbortController();
+    generationAbortRef.current = abortController;
     publishReplyState({
       status: "processing",
       prompt: generationPrompt,
@@ -224,6 +237,7 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
           key: key || undefined,
           scale: selectedScale,
           tempo: parsedTempo,
+          signal: abortController.signal,
         });
         setPrompt("");
         onGenerated?.();
@@ -249,9 +263,12 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
     } catch (error) {
       clearProcessingTimer();
       publishReplyState(null);
-      toast.error(error instanceof Error ? error.message : "Unable to continue the conversation.");
+      if (!(error instanceof Error && error.name === "AbortError")) {
+        toast.error(error instanceof Error ? error.message : "Unable to continue the conversation.");
+      }
     } finally {
       clearProcessingTimer();
+      generationAbortRef.current = null;
       setBusy(false);
     }
   };
@@ -353,12 +370,12 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
             </motion.button>
           </div>
           {textCreditsLow ? <p className="mb-1 text-right text-xs text-amber-200">Text-to-MIDI credits are {Math.round(textCredits?.textUsagePercent ?? 0)}% used.</p> : null}
-          <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={generate} disabled={busy || creditsExhausted} aria-label="Generate MIDI" className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-[0_0_25px_rgba(119,75,255,.65)] disabled:opacity-60">
-            <ArrowUp className="size-5" />
+          <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={busy ? stopGeneration : generate} disabled={!busy && creditsExhausted} aria-label={busy ? "Stop MIDI generation" : "Generate MIDI"} title={busy ? "Stop generation" : "Generate MIDI"} className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-[0_0_25px_rgba(119,75,255,.65)] disabled:opacity-60">
+            {busy ? <Square className="size-4 fill-current" /> : <ArrowUp className="size-5" />}
           </motion.button>
         </div>
       </div>
-      {showScrollToLatest ? <button type="button" onClick={scrollToLatest} title="Jump to latest message" aria-label="Jump to latest message" className="fixed bottom-24 left-1/2 z-40 grid size-10 -translate-x-1/2 place-items-center rounded-full border border-white/15 bg-[#171427]/95 text-white shadow-[0_12px_35px_rgba(0,0,0,.45)] backdrop-blur transition hover:bg-violet-600"><ArrowDown className="size-4" /></button> : null}
+      {showScrollToLatest ? <button type="button" onClick={scrollToLatest} title="Jump to latest message" aria-label="Jump to latest message" className="fixed bottom-36 left-1/2 z-40 grid size-10 -translate-x-1/2 place-items-center rounded-full border border-white/15 bg-[#171427]/95 text-white shadow-[0_12px_35px_rgba(0,0,0,.45)] backdrop-blur transition hover:bg-violet-600 md:bottom-40"><ArrowDown className="size-4" /></button> : null}
       {localReplyState ? (
         <div className="mt-3 rounded-[1.5rem] border border-white/10 bg-white/[.04] px-4 py-3 text-sm text-[#ddd9e7]">
           {localReplyState.status === "processing" ? (

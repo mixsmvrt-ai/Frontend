@@ -53,6 +53,15 @@ function kindForPart(part: string): ComposerSubmitInput["kind"] {
   return "full_composition";
 }
 
+function remainingProducerParts(generatedParts: string[]) {
+  const completed = new Set(generatedParts);
+  if (completed.has("Chords + Melody")) {
+    completed.add("Chords");
+    completed.add("Melody");
+  }
+  return producerParts.filter((part) => !completed.has(part));
+}
+
 export default function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const router = useRouter();
@@ -286,6 +295,7 @@ export default function ProjectPage() {
     try {
       await projectsApi.createMessage(projectId, {
         content,
+        replaceMessageId: message.id,
         generation: {
           kind,
           key: originalSettings?.key,
@@ -320,7 +330,7 @@ export default function ProjectPage() {
     setPendingPrompt(input.prompt);
     setAssistantTyping(false);
     try {
-      const refinement = await projectsApi.refine(projectId, { prompt: input.prompt, kind: input.kind });
+      const refinement = await projectsApi.refine(projectId, { prompt: input.prompt, kind: input.kind }, { signal: input.signal });
       const tempoQuestion: PromptRefinementQuestion = { id: "tempo", label: "Tempo", prompt: "What BPM should I use?", options: ["80 BPM", "95 BPM", "105 BPM", "120 BPM", "Custom BPM"] };
       const questions = [tempoQuestion, ...refinement.data.questions.filter((question) => question.id !== "tempo")];
       if (questions.length) {
@@ -354,7 +364,7 @@ export default function ProjectPage() {
           variationAmount: 0.5,
           timeSignature: [4, 4],
         },
-      });
+      }, { signal: input.signal });
 
       if (result.data.mode === "generation") {
         await loadMessages();
@@ -404,7 +414,7 @@ export default function ProjectPage() {
         });
         await loadMessages();
         const generatedParts = [...(composerReply.generatedParts ?? []), value];
-        const remaining = producerParts.filter((part) => !generatedParts.includes(part) && part !== "Chords + Melody");
+        const remaining = remainingProducerParts(generatedParts);
         setComposerReply(remaining.length ? { ...composerReply, status: "refining", stage: "next-part", questions: [{ id: "part", label: "Build next", prompt: "What should I build next?", options: ["Done", ...remaining] }], refinementIndex: 0, refinementAnswers: [], generatedParts } : null);
         return;
       } catch (error) {
@@ -440,7 +450,7 @@ export default function ProjectPage() {
       });
       if (generation.data.mode === "generation") await loadMessages();
       const generated = selectedPart ?? (composerReply.kind === "chords" ? "Chords" : composerReply.kind === "drums" ? "Drums" : "Melody");
-      setComposerReply({ ...composerReply, status: "refining", stage: "next-part", questions: [{ id: "part", label: "Build next", prompt: "Nice. What should I build next?", options: ["Done", ...producerParts.filter((part) => part !== generated && part !== "Chords + Melody")] }], refinementIndex: 0, refinementAnswers: [], generatedParts: [generated], tempo: generation.data.generation?.tempo ?? (selectedTempo ? Number(selectedTempo) : composerReply.tempo) });
+      setComposerReply({ ...composerReply, status: "refining", stage: "next-part", questions: [{ id: "part", label: "Build next", prompt: "Nice. What should I build next?", options: ["Done", ...remainingProducerParts([generated])] }], refinementIndex: 0, refinementAnswers: [], generatedParts: [generated], tempo: generation.data.generation?.tempo ?? (selectedTempo ? Number(selectedTempo) : composerReply.tempo) });
       setPendingPrompt(null);
     } catch (error) {
       setComposerReply(null);
