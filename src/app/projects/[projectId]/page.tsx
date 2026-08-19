@@ -83,6 +83,7 @@ export default function ProjectPage() {
   const [customMood, setCustomMood] = useState("");
   const [customMoodActive, setCustomMoodActive] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const generationSignalRef = useRef<AbortSignal | undefined>(undefined);
   const initialPromptSubmittedRef = useRef(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
 
@@ -328,6 +329,7 @@ export default function ProjectPage() {
     }
 
     setPendingPrompt(input.prompt);
+    generationSignalRef.current = input.signal;
     setAssistantTyping(false);
     try {
       const refinement = await projectsApi.refine(projectId, { prompt: input.prompt, kind: input.kind }, { signal: input.signal });
@@ -411,7 +413,7 @@ export default function ProjectPage() {
         await projectsApi.createMessage(projectId, {
           content: composerReply.prompt,
           generation: { kind: kindForPart(value), key: composerReply.key, scale: composerReply.scale, tempo: composerReply.tempo, mood: composerReply.refinementAnswers?.find((answer) => answer.category === "mood")?.value, lengthBars: 8, complexity: "medium", variationAmount: 0.5, timeSignature: [4, 4] },
-        });
+        }, { signal: generationSignalRef.current });
         await loadMessages();
         const generatedParts = [...(composerReply.generatedParts ?? []), value];
         const remaining = remainingProducerParts(generatedParts);
@@ -447,7 +449,7 @@ export default function ProjectPage() {
           variationAmount: 0.5,
           timeSignature: [4, 4],
         },
-      });
+      }, { signal: generationSignalRef.current });
       if (generation.data.mode === "generation") await loadMessages();
       const generated = selectedPart ?? (composerReply.kind === "chords" ? "Chords" : composerReply.kind === "drums" ? "Drums" : "Melody");
       setComposerReply({ ...composerReply, status: "refining", stage: "next-part", questions: [{ id: "part", label: "Build next", prompt: "Nice. What should I build next?", options: ["Done", ...remainingProducerParts([generated])] }], refinementIndex: 0, refinementAnswers: [], generatedParts: [generated], tempo: generation.data.generation?.tempo ?? (selectedTempo ? Number(selectedTempo) : composerReply.tempo) });
@@ -631,7 +633,7 @@ export default function ProjectPage() {
         {showScrollToBottom ? <button type="button" onClick={scrollToLatest} title="Jump to latest message" aria-label="Jump to latest message" className="fixed bottom-44 left-1/2 z-40 grid size-10 -translate-x-1/2 place-items-center rounded-full border border-white/15 bg-[#171427]/95 text-white shadow-[0_12px_35px_rgba(0,0,0,.45)] backdrop-blur transition hover:bg-violet-600 md:bottom-48"><ArrowDown className="size-4" /></button> : null}
 
         <div className="pb-32">
-          <GenerationComposer projectId={projectId} onGenerated={() => void loadMessages()} onReplyStateChange={setComposerReply} onSubmitPrompt={submitProjectPrompt} />
+          <GenerationComposer projectId={projectId} generationActive={composerReply?.status === "processing"} onGenerated={() => void loadMessages()} onReplyStateChange={setComposerReply} onSubmitPrompt={submitProjectPrompt} />
         </div>
       </section>
     </AppShell>

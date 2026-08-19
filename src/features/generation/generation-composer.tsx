@@ -53,7 +53,7 @@ function projectTitleFromPrompt(value: string) {
   return `${clean.slice(0, 45).trim()}...`;
 }
 
-export function GenerationComposer({ projectId, onGenerated, onReplyStateChange, onSubmitPrompt }: { projectId?: string; onGenerated?: () => void; onReplyStateChange?: (state: ComposerReplyState | null) => void; onSubmitPrompt?: (input: ComposerSubmitInput) => Promise<void> }) {
+export function GenerationComposer({ projectId, onGenerated, onReplyStateChange, onSubmitPrompt, generationActive = false }: { projectId?: string; onGenerated?: () => void; onReplyStateChange?: (state: ComposerReplyState | null) => void; onSubmitPrompt?: (input: ComposerSubmitInput) => Promise<void>; generationActive?: boolean }) {
   const router = useRouter();
   const { isAuthenticated, authResolved } = useViewerAuth();
   const { membership, refresh } = useMembership({ enabled: authResolved && isAuthenticated, redirectOnMissingUser: false });
@@ -268,7 +268,6 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
       }
     } finally {
       clearProcessingTimer();
-      generationAbortRef.current = null;
       setBusy(false);
     }
   };
@@ -370,8 +369,8 @@ export function GenerationComposer({ projectId, onGenerated, onReplyStateChange,
             </motion.button>
           </div>
           {textCreditsLow ? <p className="mb-1 text-right text-xs text-amber-200">Text-to-MIDI credits are {Math.round(textCredits?.textUsagePercent ?? 0)}% used.</p> : null}
-          <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={busy ? stopGeneration : generate} disabled={!busy && creditsExhausted} aria-label={busy ? "Stop MIDI generation" : "Generate MIDI"} title={busy ? "Stop generation" : "Generate MIDI"} className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-[0_0_25px_rgba(119,75,255,.65)] disabled:opacity-60">
-            {busy ? <Square className="size-4 fill-current" /> : <ArrowUp className="size-5" />}
+          <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={busy || generationActive ? stopGeneration : generate} disabled={!busy && !generationActive && creditsExhausted} aria-label={busy || generationActive ? "Stop MIDI generation" : "Generate MIDI"} title={busy || generationActive ? "Stop generation" : "Generate MIDI"} className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-[0_0_25px_rgba(119,75,255,.65)] disabled:opacity-60">
+            {busy || generationActive ? <Square className="size-4 fill-current" /> : <ArrowUp className="size-5" />}
           </motion.button>
         </div>
       </div>
