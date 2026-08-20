@@ -14,6 +14,7 @@ export type AdminOverview = {
 export type AdminUser = {
   id: string;
   display_name: string | null;
+  plan?: "go" | "plus" | null;
   membership_type: string | null;
   membership_status: string | null;
   created_at: string | null;
@@ -29,6 +30,14 @@ export async function getAdminOverview() {
 export async function getAdminUsers(query?: string) {
   const suffix = query ? `?query=${encodeURIComponent(query)}` : "";
   return apiRequest<{ data: AdminUser[]; meta: { total: number } }>(`/admin/users${suffix}`);
+}
+
+export type AdminMembershipType = "trial" | "pro" | "expired" | "admin";
+export type AdminMembershipStatus = "trial_active" | "pro_active" | "expired" | "admin";
+export type AdminRole = "user" | "support" | "admin" | "super_admin";
+
+export async function updateAdminUser(id: string, input: { displayName?: string; membershipType?: AdminMembershipType; membershipStatus?: AdminMembershipStatus; accessExpiresAt?: string | null; trialExpiresAt?: string | null; role?: AdminRole }) {
+  return apiRequest<void>(`/admin/users/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
 }
 
 export async function getAdminResource(resource: string) {

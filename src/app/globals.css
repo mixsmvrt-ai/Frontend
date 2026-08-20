@@ -42,6 +42,9 @@ button { cursor: pointer; }
   70% { margin-top: 16px; opacity: .7; }
 }
 [data-admin-shell] { font-family: Inter, "Segoe UI", sans-serif; }
+.admin-select { min-width: 7.5rem; border: 1px solid rgba(255,255,255,.08); border-radius: .5rem; background: #211b2f; color: #e2e8f0; padding: .5rem .6rem; font-size: .7rem; outline: none; }
+.admin-select:focus { border-color: rgba(139,92,246,.75); box-shadow: 0 0 0 2px rgba(139,92,246,.14); }
+.admin-select option { background: #211b2f; color: #f8fafc; }
 .glow { box-shadow: 0 0 80px rgba(116, 220, 211, .16); }
 .glass { background: var(--panel); border: 1px solid var(--border); backdrop-filter: blur(20px); }
 .field { background: rgba(255,255,255,.045); border: 1px solid var(--border); border-radius: .75rem; color: white; padding: .75rem; width: 100%; outline: none; }
