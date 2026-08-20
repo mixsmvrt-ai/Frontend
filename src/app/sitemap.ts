@@ -11,7 +11,7 @@ const publicPages = [
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
-	const base = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+	const base = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.getmidiflow.com").replace(/\/$/, "");
 	return publicPages.map(({ path, priority }) => ({
 		url: `${base}${path}`,
 		changeFrequency: "weekly",

@@ -3,7 +3,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://www.getmidiflow.com"),
   title: { default: "MidiFlow — Music, made tangible", template: "%s | MidiFlow" },
   description: "AI-assisted MIDI generation for artists and producers.",
   applicationName: "MidiFlow",
