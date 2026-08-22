@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { MidiPlayback } from "@/components/midi-playback";
+import { MidiPianoRoll } from "@/components/midi-piano-roll";
 import { promptSignIn, useViewerAuth } from "@/features/auth/use-viewer-auth";
 import { GenerationComposer, type ComposerReplyState, type ComposerSubmitInput } from "@/features/generation/generation-composer";
 import { favoriteGeneration, generateMusic, generationExports, readGeneration, regenerateGeneration, type GenerationFile, type GenerationRecord } from "@/services/generations";
@@ -537,6 +538,7 @@ export default function ProjectPage() {
                   {isGeneration ? (
                     <>
                       <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-white"><MidiPlayback url={primaryExport(exports ?? [])?.url} onRequestUrl={() => resolvePlaybackUrl(message.generation_id!)} prompt={generationRequest?.prompt ?? message.content} kind={generationRequest?.kind} fileName={midiTitle} /><Music2 className="size-4 text-violet-200" />{message.content || midiTitle}</p>
+                      <MidiPianoRoll url={primaryExport(exports ?? [])?.url} fileName={midiTitle} />
                       <div className="mt-3 flex items-center gap-2">
                         <button type="button" title="Download MIDI" aria-label="Download MIDI" onClick={() => void openExport(message.generation_id!)} disabled={Boolean(actionState)} className="grid size-9 place-items-center rounded-full border border-white/10 text-white transition hover:bg-white/[.08] disabled:opacity-60">{actionState === "download" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}</button>
                         {exports?.some((file) => file.kind === "multi") ? <button type="button" title="Download multi-track MIDI" aria-label="Download multi-track MIDI" onClick={() => void openExport(message.generation_id!, "multi")} disabled={Boolean(actionState)} className="grid size-9 place-items-center rounded-full border border-white/10 text-white transition hover:bg-white/[.08] disabled:opacity-60"><Download className="size-4" /></button> : null}
@@ -599,14 +601,7 @@ export default function ProjectPage() {
                     <p className="font-medium text-white">Done</p>
                     <p className="mt-2 text-[#c2bdd2]">Your MIDI file is ready.</p>
                     {composerReply.downloadUrl && composerReply.fileName ? (
-                      <button
-                        type="button"
-                        onClick={() => triggerDownload(composerReply.downloadUrl!, composerReply.fileName!)}
-                        className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 font-semibold text-white"
-                      >
-                        <Download className="size-3.5" />
-                        {composerReply.fileName}
-                      </button>
+                      <MidiPianoRoll url={composerReply.downloadUrl} fileName={composerReply.fileName} />
                     ) : null}
                   </>
                 )}
