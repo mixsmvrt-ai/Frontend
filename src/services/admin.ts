@@ -44,6 +44,10 @@ export async function getAdminResource(resource: string) {
   return apiRequest<{ data: Array<Record<string, unknown>> }>(`/admin/${resource}`);
 }
 
+export async function getAdminGenerations() {
+  return apiRequest<{ data: Array<Record<string, unknown>> }>("/admin/generations");
+}
+
 export async function updateAdminResource(resource: string, id: string, input: Record<string, unknown>) {
   return apiRequest<{ data: Record<string, unknown> }>(`/admin/${resource}/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
 }

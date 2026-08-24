@@ -5,7 +5,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Pie, PieChart, Cell, Res
 import { Download, Filter, MoreHorizontal, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import MetricCard from "./MetricCard";
 import ChartCard from "./ChartCard";
-import { getAdminResource, getAdminUsers, runAdminUserAction, updateAdminResource } from "@/services/admin";
+import { getAdminGenerations, getAdminResource, getAdminUsers, runAdminUserAction, updateAdminResource } from "@/services/admin";
 
 const colors = ["#8b5cf6", "#3b82f6", "#22c55e", "#f59e0b"];
 const tooltipStyle = { backgroundColor: "#1b1b26", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, color: "#e2e8f0", fontSize: 12 };
@@ -14,7 +14,7 @@ type Config = { title: string; description: string; tabs: string[]; metrics: Arr
 
 const resourceByTitle: Record<string, string> = { Users: "users", Payments: "payments", Subscriptions: "payments", Projects: "projects", "MIDI Library": "midi-library", "AI Generation": "generations", Support: "supportTickets", Settings: "settings", "Music Brain": "artistProfiles", Referrals: "referrals" };
 const formatCell = (value: unknown) => value === null || value === undefined || value === "" ? "-" : typeof value === "object" ? JSON.stringify(value) : String(value);
-const fieldAliases: Record<string, string[]> = { Name: ["display_name", "name", "full_name", "email"], User: ["display_name", "user_name", "email", "user_id"], Customer: ["display_name", "customer_name", "email", "user_id"], Owner: ["display_name", "owner_name", "email", "user_id"], Profile: ["artist_name", "name"], "Pack name": ["name", "pack_name"], Project: ["name", "project_name"], Subject: ["subject", "title"], "Transaction ID": ["transaction_id", "payment_id", "id"], Generation: ["id"], Plan: ["membership_type", "plan", "plan_name"], Amount: ["amount_cents", "amount", "total_cents"], Method: ["payment_method", "method", "provider"], Category: ["category", "type"], Type: ["type", "project_type"], Genre: ["genre", "primary_genre"], Status: ["membership_status", "status", "active"], "Model used": ["model_used"], Fallback: ["used_fallback"], "Failure reason": ["error_message"], Created: ["created_at"], Date: ["created_at", "updated_at", "paid_at"], "Last updated": ["updated_at"], "Last active": ["last_active_at", "updated_at"], Credits: ["credits_balance", "credits_used", "credit_cost"], Referrals: ["referrals", "referral_count", "signups"], Rules: ["rules", "rule_count"], "MIDI count": ["midi_count", "file_count", "count"], Storage: ["storage_size", "size_bytes"], Requests: ["requests", "request_count"], Latency: ["latency_ms", "average_latency_ms"], Tokens: ["tokens", "total_tokens"], Assigned: ["assigned_to", "assignee"], Priority: ["priority"], Scope: ["scope"] };
+const fieldAliases: Record<string, string[]> = { Name: ["display_name", "name", "full_name", "email"], User: ["display_name", "user_name", "email", "user_id"], Customer: ["display_name", "customer_name", "email", "user_id"], Owner: ["display_name", "owner_name", "email", "user_id"], Profile: ["artist_name", "name"], "Pack name": ["name", "pack_name"], Project: ["project_name", "name", "title"], Prompt: ["prompt", "generation_prompt"], Subject: ["subject", "title"], "Transaction ID": ["transaction_id", "payment_id", "id"], Generation: ["id"], Plan: ["membership_type", "plan", "plan_name"], Amount: ["amount_cents", "amount", "total_cents"], Method: ["payment_method", "method", "provider"], Category: ["category", "type"], Type: ["type", "project_type"], Genre: ["genre", "primary_genre"], Status: ["membership_status", "status", "active"], "Model used": ["model_used"], Fallback: ["used_fallback"], "Failure reason": ["error_message"], Created: ["created_at"], Date: ["created_at", "updated_at", "paid_at"], "Last updated": ["updated_at"], "Last active": ["last_active_at", "updated_at"], Credits: ["credits_balance", "credits_used", "credit_cost"], Referrals: ["referrals", "referral_count", "signups"], Rules: ["rules", "rule_count"], "MIDI count": ["midi_count", "file_count", "count"], Storage: ["storage_size", "size_bytes"], Requests: ["requests", "request_count"], Latency: ["latency_ms", "average_latency_ms"], Tokens: ["tokens", "total_tokens"], Assigned: ["assigned_to", "assignee"], Priority: ["priority"], Scope: ["scope"] };
 const readableKeys = ["display_name", "name", "full_name", "artist_name", "title", "subject", "email", "status", "membership_status", "membership_type", "type", "category", "genre", "amount_cents", "amount", "count", "created_at", "updated_at"];
 
 export default function SectionPage({ config }: { config: Config }) {
@@ -35,7 +35,7 @@ export default function SectionPage({ config }: { config: Config }) {
     }
     const load = async () => {
       try {
-        const response = config.title === "Users" ? await getAdminUsers(query) : await getAdminResource(resource);
+        const response = config.title === "Users" ? await getAdminUsers(query) : config.title === "AI Generation" ? await getAdminGenerations() : await getAdminResource(resource);
         const liveRecords = (response.data ?? []) as Array<Record<string, unknown>>;
         if (config.title !== "Users" && liveRecords.some((record) => record.user_id || record.owner_id || record.customer_id)) {
           const usersResponse = await getAdminUsers();
